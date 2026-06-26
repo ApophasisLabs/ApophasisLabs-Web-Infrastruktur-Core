@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUCLEATION — Kristallisation des Suchraums. Globale Sättigung</title>
+
+<link class="favicon" rel="icon" type="image/png" href="favicon.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  
+  :root {
+    --void: #020306; 
+    --void-2: #070911; 
+    --ink: #f8fafc; 
+    --dim: #64748b;
+    --signal: #06b6d4; 
+    --signal-bright: #22d3ee; 
+    --glow: #a855f7; 
+    --warn: #ec4899;
+    --line: #1e1b4b;
+    --nav-bg: rgba(6, 7, 10, 0.92);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Fraunces',serif;background:var(--void);color:var(--ink);overflow-x:hidden}
+  #bg{position:fixed;inset:0;z-index:0}
+  
+  /* LAYOUT-SYSTEM */
+  .site-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+  .site-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mono{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase;}
+  section{padding:clamp(60px,10vh,130px) clamp(20px,6vw,90px);position:relative}
+
+  /* FIXED HEADER SYSTEM MIT UNIFORMER FARBLOGIK */
+  nav.main-nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center;
+    padding: clamp(16px, 3vw, 30px) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--nav-bg);
+    transition: transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000), border-color 0.3s, background-color 0.3s;
+    will-change: transform;
+  }
+  nav.main-nav.nav-hidden {
+    transform: translateY(-100%);
+  }
+  
+  /* Links und Buttons nutzen jetzt den weichen Farbwechsel zu Gray */
+  nav.main-nav a, .dropbtn { 
+    color: var(--ink); 
+    text-decoration: none; 
+    transition: color 0.2s ease; 
+  }
+  nav.main-nav a:hover, .dropbtn:hover { 
+    color: var(--dim); 
+  }
+
+  nav.main-nav a:hover .nav-brand-demo {
+    color: var(--subtext, var(--dim));
+    opacity: 0.5;
+  }
+  .nav-channels { 
+    display: flex; 
+    align-items: center; 
+  }
+
+  /* BRAND HEADER STYLING */
+  .nav-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    color: inherit; /* Erbt die Farbe des a-Tags für synchronen Hover */
+  }
+  .nav-brand-demo {
+    display: block;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-variation-settings: 'wght' 600;
+    text-transform: uppercase;
+    color: var(--signal, var(--subtext, var(--dim)));
+    opacity: 0.8;
+    transform: none;
+    text-shadow: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* DROPDOWN SYSTEM */
+  .dropdown { position: relative; display: inline-block; }
+  .dropbtn { 
+    background: none; border: none; 
+    cursor: pointer; font-weight: 500; padding: 5px 0;
+    outline: none;
+  }
+  .dropdown-content {
+    display: none; position: absolute; 
+    left: 50%; transform: translateX(-50%); 
+    top: 100%; 
+    background-color: var(--void); border: 1px solid var(--line);
+    min-width: 240px; border-radius: 4px; overflow: hidden; margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  @media(max-width: 480px) {
+    .dropdown-content { 
+      min-width: 170px; 
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .dropdown-content a { 
+    padding: 14px 20px; 
+    display: block; 
+    font-size: 10px; 
+    color: var(--ink);
+    border-bottom: 1px solid var(--line); 
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .dropdown-content a:hover { 
+    background: var(--line); 
+    color: var(--ink) !important;
+    opacity: 1;
+  }
+  .dropdown.show .dropdown-content { display: block; }
+
+  /* PERSISTENT CHAT INTERFACE */
+  .chat-widget {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: clamp(20px, 4vw, 40px);
+    margin-left: auto;
+    margin-right: clamp(20px, 4vw, 40px);
+    margin-bottom: clamp(20px, 4vw, 40px);
+    width: max-content;
+    z-index: 1000;
+    font-family: 'IBM Plex Mono', monospace;
+    top: auto; left: auto; right: auto;
+  }
+  
+  .chat-trigger {
+    background: rgba(7, 9, 17, 0.4);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px 28px;
+    border-radius: 24px 4px 24px 4px;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    position: relative;
+  }
+  .chat-trigger:hover {
+    border-radius: 4px 24px 4px 24px;
+    border-color: var(--signal-bright);
+    box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.05), 0 14px 40px rgba(168, 85, 247, 0.05);
+    transform: translateY(-3px);
+  }
+
+  .chat-popup {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    right: 0;
+    width: 340px;
+    background: rgba(7, 9, 17, 0.96);
+    border: 1px solid var(--line);
+    border-radius: 24px 4px 24px 4px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    opacity: 0;
+    transform: translateY(15px) scale(0.96);
+    pointer-events: none;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+  .chat-widget.open .chat-popup {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .chat-popup:hover {
+    border-radius: 4px 24px 4px 24px;
+    border-color: var(--signal-bright);
+    box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.05), 0 20px 50px rgba(0,0,0,0.7), 0 10px 40px rgba(168, 85, 247, 0.05);
+  }
+  
+  .chat-popup-header {
+    background: rgba(2, 3, 6, 0.4);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  
+  .chat-popup-header span:first-child {
+    color: var(--signal);
+    font-weight: 600;
+  }
+  
+  .status-badge {
+    color: var(--warn);
+    background: rgba(7, 9, 17, 0.4);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    padding: 4px 10px;
+    border-radius: 24px 4px 24px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-block;
+  }
+  .status-badge:hover,
+  .chat-popup:hover .status-badge {
+    border-radius: 4px 24px 4px 24px;
+    border-color: var(--warn);
+    box-shadow: inset 0 0 15px rgba(236, 72, 153, 0.2), 0 5px 15px rgba(236, 72, 153, 0.1);
+  }
+
+  .chat-popup-body {
+    padding: 22px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--dim);
+  }
+  
+  .chat-input-locked {
+    margin-top: 18px;
+  }
+  .chat-input-locked input {
+    width: 100%;
+    background: rgba(7, 9, 17, 0.4);
+    border: 1px solid var(--line);
+    color: var(--warn);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 12px 14px;
+    border-radius: 24px 4px 24px 4px;
+    letter-spacing: 2px;
+    text-align: center;
+    cursor: not-allowed;
+    outline: none;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chat-input-locked input:hover,
+  .chat-popup:hover .chat-input-locked input {
+    border-radius: 4px 24px 4px 24px;
+    border-color: var(--warn);
+    box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.15), 0 10px 30px rgba(236, 72, 153, 0.1);
+  }
+
+  /* HERO AREA & KINETISCHE REVEAL ANIMATIONEN */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    gap:30px;
+    padding-top:clamp(190px, 24vh, 260px);
+  }
+  
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:5px;text-transform:uppercase;color:var(--signal);font-weight:200;
+    opacity:0;
+    will-change: transform, filter, opacity;
+    animation: cyberFadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  }
+  
+  h1{font-size:clamp(44px,8.5vw,130px);line-height:.94;font-weight:900;letter-spacing:-.03em;max-width:18ch}
+  
+  h1 .l1{
+    display: inline-block;
+    opacity:0;
+    will-change: transform, filter, opacity;
+    animation: matrixFocusFull 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+  }
+  
+  h1 .l2 {
+    font-family: 'Fraunces', serif; 
+    font-size: 0.75em;
+    letter-spacing: 0px;
+    text-transform: none;
+    font-weight: 400;
+    color: var(--signal);
+    opacity: 0; 
+    display: inline-block;
+    margin-top: 12px;
+    will-change: transform, filter, opacity;
+    animation: matrixFocusDim 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+  }
+  
+  .hero p{
+    font-size:clamp(17px,2.2vw,23px);color:var(--dim);max-width:54ch;line-height:1.5;
+    opacity:0;
+    will-change: transform, filter, opacity;
+    animation: cyberFadeIn 1.3s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+  }
+  .cta-row{
+    display:flex;gap:16px;flex-wrap:wrap;
+    opacity:0;
+    will-change: transform, filter, opacity;
+    animation: cyberFadeIn 1.3s cubic-bezier(0.16, 1, 0.3, 1) 1.1s forwards;
+    margin-top:8px;
+  }
+  
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:1px;text-decoration:none;padding:16px 28px;border-radius:10px;transition:all .2s;border:1px solid var(--line)}
+  .btn.solid{background:var(--signal);color:var(--void);font-weight:600}
+  .btn.solid:hover{box-shadow:0 0 0 4px rgba(6,182,212,.22);transform:translateY(-2px)}
+  .btn.ghost{color:var(--ink);background:transparent}
+  .btn.ghost:hover{border-color:var(--signal-bright);color:var(--signal-bright)}
+  
+  .scrollhint{
+    position:absolute;bottom:30px;left:clamp(20px,6vw,90px);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--dim);
+    opacity:0;
+    will-change: transform, filter, opacity;
+    animation: cyberFadeIn 1.4s cubic-bezier(0.16, 1, 0.3, 1) 1.4s forwards;
+  }
+
+  /* KEYFRAMES SCHÄRFE- KONDENSATION & FOKUS */
+  @keyframes cyberFadeIn {
+    0% {
+      opacity: 0;
+      filter: blur(12px) brightness(1.2);
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0) brightness(1);
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes matrixFocusFull {
+    0% {
+      opacity: 0;
+      filter: blur(25px) brightness(1.5);
+      transform: translateY(35px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0) brightness(1);
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes matrixFocusDim {
+    0% {
+      opacity: 0;
+      filter: blur(25px) brightness(1.5);
+      transform: translateY(35px) scale(0.98);
+    }
+    100% {
+      opacity: 0.5; /* Exakte Ziel-Sättigung */
+      filter: blur(0) brightness(1);
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* SCROLL REVEAL (FOKUSSIERT SICH EBENFALLS BEIM SCROLLEN) */
+  .reveal {
+    opacity: 0;
+    transform: translateY(35px) scale(0.99);
+    filter: blur(15px) contrast(0.8);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                filter 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity, filter;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0) contrast(1);
+  }
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:18px}
+  h2{font-size:clamp(30px,5vw,62px);line-height:1.02;font-weight:900;letter-spacing:-.02em;max-width:18ch;margin-bottom:22px}
+  .lead{font-size:clamp(16px,2vw,21px);color:var(--dim);max-width:60ch;line-height:1.6}
+
+  /* NUCLEATION SPECIFIC STRUCTURES */
+  .saturation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(20px, 4vw, 40px);
+    margin-top: 60px;
+  }
+  @media(max-width:760px){.saturation-grid{grid-template-columns:1fr}}
+
+  .nuc-node-box {
+    border: 1px solid var(--line);
+    background: rgba(7, 9, 17, 0.4);
+    padding: 40px;
+    border-radius: 24px 4px 24px 4px;
+    backdrop-filter: blur(8px);
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+  .nuc-node-box:hover {
+    border-radius: 4px 24px 4px 24px;
+    border-color: var(--signal-bright);
+    box-shadow: inset 0 0 20px rgba(6, 182, 212, 0.05), 0 10px 40px rgba(168, 85, 247, 0.05);
+    transform: translateY(-4px);
+  }
+
+  .nuc-frame-tag {
+    position: absolute;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    transition: color 0.3s, transform 0.5s;
+  }
+  .tag-tl { top: 12px; left: 16px; }
+  .tag-br { bottom: 12px; right: 16px; }
+  
+  .nuc-node-box:hover .nuc-frame-tag {
+    color: var(--signal-bright);
+  }
+  .nuc-node-box:hover .tag-tl { transform: translate(4px, 2px); }
+  .nuc-node-box:hover .tag-br { transform: translate(-4px, -2px); }
+
+  .nuc-node-box h3 {
+    font-size: clamp(22px, 2.8vw, 32px);
+    font-weight: 900;
+    letter-spacing: -.01em;
+    margin: 15px 0;
+    color: var(--ink);
+    transition: color 0.3s;
+  }
+  .nuc-node-box:hover h3 {
+    color: var(--signal-bright);
+  }
+
+  .nuc-node-box p {
+    color: var(--dim);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* Gitter Phasenübergänge */
+  .lattice-phases {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 50px;
+  }
+  .lattice-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+  }
+  .lattice-row:last-child { border-bottom: 1px solid var(--line); }
+  
+  .lattice-index {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--glow);
+    font-weight: 600;
+  }
+  .lattice-content h4 {
+    font-size: clamp(20px, 2.5vw, 28px);
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .lattice-content p {
+    color: var(--dim);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 65ch;
+  }
+
+  .matrix-metrics {
+    background: linear-gradient(180deg, transparent, rgba(168,85,247,0.02), transparent);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  
+  .metrics-display {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 50px;
+  }
+  @media(max-width:760px){.metrics-display{grid-template-columns:1fr}}
+
+  .metric-cell {
+    border-left: 1px dashed var(--line);
+    padding-left: 24px;
+    transition: border-color 0.4s;
+  }
+  .metric-cell:hover {
+    border-left-color: var(--warn);
+  }
+  .metric-cell .val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(32px, 4.5vw, 52px);
+    font-weight: 700;
+    color: var(--warn);
+    line-height: 1;
+  }
+  .metric-cell .desc {
+    color: var(--dim);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 14px;
+  }
+
+  .final-saturation {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .final-saturation h2 { max-width: 22ch; }
+
+  footer{
+    padding: 60px clamp(20px, 6vw, 90px); 
+    border-top: 1px solid var(--line); 
+    color: var(--dim); 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    gap: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--void);
+  }
+  footer a { color: var(--dim); text-decoration: none; margin-right: 25px; }
+  footer a:hover { color: var(--ink); }
+
+  .noise{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+
+<nav class="main-nav">
+  <a href="index.html" class="mono" style="display:flex; align-items:center; gap:14px; text-decoration:none;">
+    <img src="favicon.png" alt="" style="width:24px; height:24px; object-fit:contain;">
+    <div class="nav-brand-text">
+      <span style="font-weight:600; line-height:1.2;">Apophasis Labs</span>
+      <span class="nav-brand-demo">- DEMO</span>
+    </div>
+  </a>
+  
+  <div class="nav-channels mono">
+    <div class="dropdown" id="menuDropdown">
+      <button class="dropbtn mono" id="dropdownBtn">Kanäle [+]</button>
+      <div class="dropdown-content">
+        <a href="decoherence.html">Kanal 01 // <br>Decoherence</a>
+        <a href="precipitation.html">Kanal 02 // <br> Precipitation</a>
+        <a href="nucleation.html">Kanal 03 // <br> Nucleation</a>
+        <a href="index.html">Kanal 04-∞ // <br>Not Collapsed</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<canvas id="bg"></canvas>
+<div class="noise"></div>
+
+<div class="site-container">
+  <main class="site-content">
+
+    <section class="hero">
+      <div class="kicker">Kanal 03 // Nucleation</div>
+      <h1>
+        <span class="l1">Kristallisation des Suchraums</span><br>
+        <span class="l2">Globale Sättigung</span>
+      </h1>
+      <p>Präzise gesetzte informationelle Keimzellen binden unstrukturiertes Suchvolumen. Wir fluten das digitale Vakuum nicht mit unkoordiniertem Inhalt, sondern spannen ein fehlerfreies Immunisierungs-Gitter über den globalen Markt.</p>
+      <div class="cta-row">
+        <a href="#cta" class="btn solid">Sättigung zünden</a>
+        <a href="#architecture" class="btn ghost">Das Gittersystem</a>
+      </div>
+      <div class="scrollhint mono">↓ Phasenkopplung einleiten</div>
+    </section>
+
+    <section class="pain">
+      <div class="eyebrow mono reveal">Die Anomalie</div>
+      <h2 class="reveal">Das ungenutzte Vakuum im Strom der Fehlermeldungen</h2>
+      <p class="lead reveal">Jede Sekunde entstehen im globalen Netz unbesetzte Hohlräume: ungelöste Systemkonflikte, kryptische Log-Dateien und offene Entwicklerschmerzen. Bevor etablierte Plattformen reagieren können, verdampft die Such-Intention im Nichts. Herkömmliches Marketing versteht diese nicht-linearen Dynamiken nicht. Hier wird kein Vertrauen erfragt — hier wird eine strukturelle Lücke im Suchraum augenblicklich durch ein stabile Informationskristall besetzt.</p>
+    </section>
+
+    <section id="architecture">
+      <div class="eyebrow mono reveal">Die Architektur</div>
+      <h2 class="reveal">Das Symplektische Immunisierungs-Gitter</h2>
+      <p class="lead reveal">Der Nucleator operiert an den Bruchlinien offener Datenströme. Ausgeschleuste Schmerzpunkte transformieren programmatisch in sterile informationelle Knotenpunkte.</p>
+      
+      <div class="saturation-grid">
+        <div class="nuc-node-box reveal">
+          <div class="nuc-frame-tag tag-tl">[NUC_NODE_03_A]</div>
+          <div class="nuc-frame-tag tag-br">[SYS_STAGE_ALPHA]</div>
+          <h3>Nukleation</h3>
+          <p>Der Moment der kontrollierten Keimbildung. Die rohen Anomalien aus Precipitation kollabieren direkt in maßgeschneiderte, hochspezifische Zielstrukturen. Jede Permutation besetzt eine exakte Umgebungsvariable im Suchraum.</p>
+        </div>
+
+        <div class="nuc-node-box reveal">
+          <div class="nuc-frame-tag tag-tl">[NUC_NODE_03_B]</div>
+          <div class="nuc-frame-tag tag-br">[SYS_STAGE_BETA]</div>
+          <h3>Hyperosmotischer Druck</h3>
+          <p>Durch die schlagartige Bereitstellung tausender präzise verzahnter Systemantworten entsteht ein unaufhaltsames Konzentrationsgefälle. Suchmaschinen saugen das crystalline Gitter rein physikalisch auf.</p>
+        </div>
+
+        <div class="nuc-node-box reveal">
+          <div class="nuc-frame-tag tag-tl">[NUC_NODE_03_C]</div>
+          <div class="nuc-frame-tag tag-br">[SYS_STAGE_GAMMA]</div>
+          <h3>Anharmonische Kopplung</h3>
+          <p>Keine isolierten Einzelseiten. Jede Struktur verlinkt dynamisch und reibungsfrei auf die umliegenden mathematischen Verzweigungen. Der Crawler gerät in eine unendliche interne Schleife der Relevanz.</p>
+        </div>
+
+        <div class="nuc-node-box reveal">
+          <div class="nuc-frame-tag tag-tl">[NUC_NODE_03_D]</div>
+          <div class="nuc-frame-tag tag-br">[SYS_STAGE_OMEGA]</div>
+          <h3>Echte Sättigung</h3>
+          <p>Das Gitter expandiert autonom im stündlichen Takt der globalen Fehlproduktion. Wenn ein Problem im Äther auftaucht, steht die scharfkantige Abfang-Architektur bereits sterile an der Edge bereit.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="matrix-metrics">
+      <div class="eyebrow mono reveal">Frequenz-Zustand</div>
+      <h2 class="reveal">Metriken der Phasenkohärenz</h2>
+      <div class="metrics-display">
+        <div class="metric-cell reveal">
+          <div class="val">100k+</div>
+          <div class="desc">Autonom gespannte Solitonen-Mannigfaltigkeiten im globalen Core-Index ohne Latenzverzögerung.</div>
+        </div>
+        <div class="metric-cell reveal">
+          <div class="val">&lt; 5m</div>
+          <div class="desc">Zeitspanne von der Ausfällung des Roh-Schmerzes bis zur erzwungenen Indexierung via API-Slam.</div>
+        </div>
+        <div class="metric-cell reveal">
+          <div class="val">0.00c</div>
+          <div class="desc">Grenzgesenkte Infrastrukturkosten pro permutierter Abfangfläche durch optimierte statische Edge-Kondensation.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow mono reveal">Der Sättigungsverlauf</div>
+      <h2 class="reveal">Phasenübergang der Ziel-Matrix</h2>
+      <div class="lattice-phases">
+        <div class="lattice-row reveal">
+          <div class="lattice-index">STATION 01</div>
+          <div class="lattice-content">
+            <h4>Anomalie-Siphon</h4>
+            <p>Die ungelösten Schmerzpunkte der Entwicklerlandschaft werden fortlaufend extrahiert und spektral vorsortiert.</p>
+          </div>
+        </div>
+        <div class="lattice-row reveal">
+          <div class="lattice-index">STATION 02</div>
+          <div class="lattice-content">
+            <h4>Matrix-Mutation</h4>
+            <p>Der Lösungs-Eigenzustand wird algorithmisch über alle relevanten Systemversionen, Umgebungen und Docker-Konfigurationen permutiert.</p>
+          </div>
+        </div>
+        <div class="lattice-row reveal">
+          <div class="lattice-index">STATION 03</div>
+          <div class="lattice-content">
+            <h4>Struktureller Gitter-Slam</h4>
+            <p>Einspeisung der hochdichten JSON-LD Metadaten und zeitgleiche Zündung des Google Indexing-Impulses.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="cta" class="final-saturation">
+      <div class="eyebrow mono reveal">Katalysator anfordern</div>
+      <h2 class="reveal">Beende das Rauschen. Besetze den Raum komplett</h2>
+      <p class="lead reveal">Wir baues keine gewöhnlichen Webseiten. Wir injizieren unaufhaltsame Kaskaden struktureller Dominanz in den Suchraum deines Marktes. Wenn du bereit bist für die vollständige Sättigung, öffne die Schnittstelle.</p>
+      <a href="mailto:nucleation@apophasislabs.com?subject=Nucleation%20Gitterkopplung" class="btn solid reveal">Injektion autorisieren</a>
+      <div class="mono reveal" style="color:var(--dim); font-size:13px;">Phase: Übersättigt · System operiert autonom</div>
+    </section>
+
+    <div class="chat-widget" id="chatWidget">
+      <div class="chat-popup">
+        <div class="chat-popup-header">
+          <span>NUCLEATION_SUB_CORE // AI</span>
+          <span class="status-badge">PENDING</span>
+        </div>
+        <div class="chat-popup-body">
+          Die Schnittstelle zur autopoietischen Sprachauskopplung befindet sich im Latenzraum.
+          <div class="chat-input-locked">
+            <input type="text" value="Eingabe gesperrt" disabled>
+          </div>
+        </div>
+      </div>
+      <button class="chat-trigger" id="chatTrigger">
+        <span class="mono" style="font-size: 10px; letter-spacing: 2px;">KI INTERFACE // PENDING</span>
+      </button>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="mono">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+    <span class="mono">© 2026 APOPHASIS LABS</span>
+  </footer>
+</div>
+
+<script>
+  const dropdown = document.getElementById('menuDropdown');
+  const dropdownBtn = document.getElementById('dropdownBtn');
+
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+  });
+
+  const chatWidget = document.getElementById('chatWidget');
+  const chatTrigger = document.getElementById('chatTrigger');
+
+  chatTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chatWidget.classList.toggle('open');
+    
+    chatTrigger.classList.add('click-active');
+    setTimeout(() => {
+      chatTrigger.classList.remove('click-active');
+    }, 40);
+  });
+
+  document.addEventListener('click', () => {
+    chatWidget.classList.remove('open');
+  });
+  chatWidget.addEventListener('click', (e) => e.stopPropagation());
+
+  (function() {
+    const mainNav = document.querySelector('nav.main-nav');
+    let lastScrollY = window.scrollY;
+    let accumulatedDelta = 0; 
+
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY;
+
+      if (currentScrollY <= 40) {
+        mainNav.classList.remove('nav-hidden');
+        accumulatedDelta = 0;
+      } else {
+        accumulatedDelta += deltaY;
+        if (accumulatedDelta > 35) {
+          mainNav.classList.add('nav-hidden');
+          if (dropdown) dropdown.classList.remove('show');
+          accumulatedDelta = 0;
+        } else if (accumulatedDelta < -25) {
+          mainNav.classList.remove('nav-hidden');
+          accumulatedDelta = 0;
+        }
+      }
+      accumulatedDelta = Math.max(-60, Math.min(60, accumulatedDelta));
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  })();
+
+  const io = new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting)x.target.classList.add('in')}),{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+
+<script>
+  const canvas = document.getElementById('bg');
+  const ctx = canvas.getContext('2d');
+
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
+  let lastWidth = width; 
+
+  let scrollProgress = 0;
+  let time = 0;
+
+  const spacing = 55; 
+  let cols = Math.ceil(width / spacing) + 1;
+  let rows = Math.ceil(height / spacing) + 1;
+  let nodes = [];
+
+  class LatticeNode {
+    constructor(x, y, r, c) {
+      this.baseX = x;
+      this.baseY = y;
+      this.x = x;
+      this.y = y;
+      this.row = r;
+      this.col = c;
+      this.stochasticSeed = Math.random() * Math.PI * 2;
+      this.activationThreshold = Math.random() * 0.75; 
+      this.currentGlow = 0;
+    }
+
+    update(scroll, t) {
+      if (scroll > this.activationThreshold) {
+        const targetGlow = (scroll - this.activationThreshold) / (1 - this.activationThreshold);
+        this.currentGlow += (targetGlow - this.currentGlow) * 0.1;
+      } else {
+        this.currentGlow += (0 - this.currentGlow) * 0.05;
+      }
+
+      const morphFactor = scroll * 24;
+      this.x = this.baseX + Math.sin(t * 0.01 + this.stochasticSeed) * (2 + morphFactor * 0.4);
+      this.y = this.baseY + Math.cos(t * 0.01 + this.stochasticSeed) * (2 + morphFactor * 0.4);
+    }
+  }
+
+  function initLattice() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    cols = Math.ceil(width / spacing) + 1;
+    rows = Math.ceil(height / spacing) + 1;
+    nodes = [];
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        nodes.push(new LatticeNode(c * spacing, r * spacing, r, c));
+      }
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth === lastWidth) {
+      canvas.height = window.innerHeight;
+      height = window.innerHeight;
+      return; 
+    }
+    lastWidth = window.innerWidth;
+    initLattice();
+  });
+  
+  initLattice();
+
+  window.addEventListener('scroll', () => {
+    const maxScroll = document.body.scrollHeight - window.innerHeight;
+    scrollProgress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+  }, { passive: true });
+
+  function drawLattice() {
+    ctx.clearRect(0, 0, width, height);
+    time++;
+
+    nodes.forEach(node => node.update(scrollProgress, time));
+
+    ctx.lineWidth = 0.6;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const index = r * cols + c;
+        const currentNode = nodes[index];
+        if (!currentNode) continue;
+
+        if (c < cols - 1) {
+          const rightNode = nodes[index + 1];
+          drawVector(currentNode, rightNode);
+        }
+        if (r < rows - 1) {
+          const downNode = nodes[index + cols];
+          drawVector(currentNode, downNode);
+        }
+        
+        if (scrollProgress > 0.25 && c < cols - 1 && r < rows - 1) {
+          const crossAlpha = Math.min((scrollProgress - 0.25) * 1.5, 0.4);
+          const diagNode = nodes[index + cols + 1];
+          if (diagNode) {
+            ctx.strokeStyle = `rgba(168, 85, 247, ${crossAlpha * (currentNode.currentGlow + 0.1)})`;
+            ctx.beginPath();
+            ctx.moveTo(currentNode.x, currentNode.y);
+            ctx.lineTo(diagNode.x, diagNode.y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    nodes.forEach(node => {
+      const baseAlpha = 0.08 + node.currentGlow * 0.7;
+      const pulseSize = 1 + node.currentGlow * 2.5;
+
+      ctx.fillStyle = `rgba(6, 182, 212, ${baseAlpha})`;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (node.currentGlow > 0.4) {
+        ctx.fillStyle = `rgba(168, 85, 247, ${(node.currentGlow - 0.4) * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, pulseSize * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    requestAnimationFrame(drawLattice);
+  }
+
+  function drawVector(n1, n2) {
+    const avgGlow = (n1.currentGlow + n2.currentGlow) / 2;
+    const alpha = 0.03 + avgGlow * 0.45;
+    const r = Math.floor(30 + avgGlow * (6 - 30));
+    const g = Math.floor(27 + avgGlow * (182 - 27));
+    const b = Math.floor(75 + avgGlow * (212 - 75));
+
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(n1.x, n1.y);
+    ctx.lineTo(n2.x, n2.y);
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(drawLattice);
+</script>
+</body>
+</html>

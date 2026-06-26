@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DECOHERENCE — Erst der Kopf klar. Dann die Maschine</title>
+
+<link class="favicon" rel="icon" type="image/png" href="favicon.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  :root{
+    --void:#06070a; --void-2:#0b0e14; --ink:#eef2f0; --dim:#8a98a4;
+    --signal:#c8ff4d; --signal-dim:#7fa030; --ice:#7fd4ff; --warn:#ff7a5c;
+    --line:#1b222c;
+    --nav-bg: rgba(6, 7, 10, 0.92);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Fraunces',serif;background:var(--void);color:var(--ink);overflow-x:hidden}
+  #bg{position:fixed;inset:0;z-index:0}
+  
+  /* LAYOUT-SYSTEM */
+  .site-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+  .site-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mono{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase;}
+  section{padding:clamp(60px,10vh,130px) clamp(20px,6vw,90px);position:relative}
+
+  /* HEADER SYSTEM MIT SYNCHRONEM HOVER-EFFEKT */
+  nav.main-nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center;
+    padding: clamp(16px, 3vw, 30px) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--nav-bg);
+    transition: transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000), border-color 0.3s, background-color 0.3s;
+    will-change: transform;
+  }
+  nav.main-nav.nav-hidden {
+    transform: translateY(-100%);
+  }
+  
+  /* Links und Button teilen sich jetzt die weiche Farbanpassung zu Grau */
+  nav.main-nav a, .dropbtn { 
+    color: var(--ink); 
+    text-decoration: none; 
+    transition: color 0.2s ease; 
+  }
+  nav.main-nav a:hover, .dropbtn:hover { 
+    color: var(--dim); 
+  }
+
+  nav.main-nav a:hover .nav-brand-demo {
+    color: var(--subtext, var(--dim));
+    opacity: 0.5;
+  }
+  .nav-channels { 
+    display: flex; 
+    align-items: center; 
+  }
+
+  /* BRAND HEADER STYLING */
+  .nav-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    color: inherit; /* Erbt die Farbe vom Link für den Hover-Effekt */
+  }
+  .nav-brand-demo {
+    display: block;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-variation-settings: 'wght' 600;
+    text-transform: uppercase;
+    color: var(--signal, var(--subtext, var(--dim)));
+    opacity: 0.8;
+    transform: none;
+    text-shadow: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* DROPDOWN SYSTEM */
+  .dropdown { position: relative; display: inline-block; }
+  .dropbtn { 
+    background: none; border: none; 
+    cursor: pointer; font-weight: 500; padding: 5px 0;
+    outline: none;
+  }
+  .dropdown-content {
+    display: none; position: absolute; 
+    left: 50%; transform: translateX(-50%); 
+    top: 100%; 
+    background-color: var(--void); border: 1px solid var(--line);
+    min-width: 240px; border-radius: 4px; overflow: hidden; margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  @media(max-width: 480px) {
+    .dropdown-content { 
+      min-width: 170px; 
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .dropdown-content a { 
+    padding: 14px 20px; 
+    display: block; 
+    font-size: 10px; 
+    color: var(--ink);
+    border-bottom: 1px solid var(--line); 
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .dropdown-content a:hover { 
+    background: var(--line); 
+    color: var(--ink) !important;
+    opacity: 1;
+  }
+  .dropdown.show .dropdown-content { display: block; }
+
+  /* PERSISTENT CHAT INTERFACE */
+  .chat-widget {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: clamp(20px, 4vw, 40px);
+    margin-left: auto;
+    margin-right: clamp(20px, 4vw, 40px);
+    margin-bottom: clamp(20px, 4vw, 40px);
+    width: max-content;
+    z-index: 1000;
+    font-family: 'IBM Plex Mono', monospace;
+    top: auto; left: auto; right: auto;
+  }
+  .chat-trigger {
+    background: var(--void-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px 28px;
+    border-radius: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    transition: border-color 0.4s, transform 0.4s, box-shadow 0.4s;
+    outline: none;
+    position: relative;
+  }
+  .chat-trigger:hover {
+    border-color: var(--ice);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(127,212,255,0.15);
+  }
+
+  .chat-trigger::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 30px;
+    border: 1px solid var(--ice);
+    box-shadow: 0 0 22px rgba(127, 212, 255, 0.7);
+    opacity: 0;
+    transform: scale(1.12);
+    pointer-events: none;
+    transition: opacity 1.3s cubic-bezier(0.16, 1, 0.3, 1), transform 1.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chat-trigger.click-active::after {
+    opacity: 1;
+    transform: scale(1);
+    transition: none;
+  }
+
+  .chat-popup {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    right: 0;
+    width: 320px;
+    background: rgba(6, 7, 10, 0.96);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    opacity: 0;
+    transform: translateY(15px) scale(0.96);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+  .chat-widget.open .chat-popup {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .chat-popup-header {
+    background: var(--void-2);
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  
+  .chat-popup-header span:first-child {
+    color: var(--signal);
+    font-weight: 600;
+  }
+  
+  .status-badge {
+    color: var(--warn);
+    border: 1px solid rgba(255,122,92,0.3);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .chat-popup-body {
+    padding: 22px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--dim);
+  }
+  
+  .chat-input-locked {
+    margin-top: 18px;
+  }
+  .chat-input-locked input {
+    width: 100%;
+    background: var(--void);
+    border: 1px solid var(--line);
+    color: var(--warn);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    letter-spacing: 2px;
+    text-align: center;
+    cursor: not-allowed;
+    outline: none;
+    text-transform: uppercase;
+    box-sizing: border-box;
+  }
+
+  /* HERO */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    gap:30px;
+    padding-top:clamp(190px, 24vh, 260px);
+  }
+  
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:5px;text-transform:uppercase;color:var(--signal);font-weight:200;opacity:0;animation:fade 1s .3s forwards}
+  
+  h1{font-size:clamp(46px,9vw,140px);line-height:.94;font-weight:900;letter-spacing:-.02em;max-width:16ch}
+  h1 .l1{opacity:0;animation:rise 1s .5s forwards}
+  h1 .l2{opacity:0;animation:rise 1s .72s forwards;color:var(--signal)}
+  .hero p{font-size:clamp(17px,2.2vw,23px);color:var(--dim);max-width:54ch;line-height:1.5;opacity:0;animation:fade 1s 1s forwards}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;opacity:0;animation:fade 1s 1.2s forwards;margin-top:8px}
+  
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:1px;text-decoration:none;padding:16px 28px;border-radius:10px;transition:all .2s;border:1px solid var(--line)}
+  .btn.solid{background:var(--signal);color:#0a0d05;font-weight:600}
+  .btn.solid:hover{box-shadow:0 0 0 4px rgba(200,255,77,.18);transform:translateY(-2px)}
+  .btn.ghost{color:var(--ink);background:transparent}
+  .btn.ghost:hover{border-color:var(--signal);color:var(--signal)}
+  .scrollhint{position:absolute;bottom:30px;left:clamp(20px,6vw,90px);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--dim);opacity:0;animation:fade 1s 1.6s forwards}
+
+  @keyframes fade{to{opacity:1}}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}
+  .reveal.in{opacity:1;transform:none}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--signal-dim);margin-bottom:18px}
+  h2{font-size:clamp(30px,5vw,62px);line-height:1.02;font-weight:900;letter-spacing:-.02em;max-width:18ch;margin-bottom:22px}
+  .lead{font-size:clamp(16px,2vw,21px);color:var(--dim);max-width:60ch;line-height:1.6}
+
+  .pain{background:linear-gradient(180deg,transparent,rgba(255,122,92,.04),transparent)}
+  .pain .quote{font-size:clamp(24px,4vw,46px);line-height:1.25;font-weight:600;max-width:20ch;border-left:3px solid var(--warn);padding-left:26px;margin:30px 0}
+  .pain .quote em{color:var(--warn);font-style:normal}
+
+  .phases{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:50px}
+  @media(max-width:760px){.phases{grid-template-columns:1fr}}
+  
+  .phase{border:1px solid var(--line);border-radius:16px;padding:34px;background:linear-gradient(180deg,var(--void-2),transparent);position:relative;overflow:hidden}
+  .phase::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+  .phase.one::before{background:var(--ice)} .phase.two::before{background:var(--signal)}
+  .phase .num{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:2px;color:var(--dim)}
+  .phase h3{font-size:clamp(24px,3vw,34px);font-weight:900;margin:10px 0 14px;letter-spacing:-.01em}
+  .phase.one h3{color:var(--ice)} .phase.two h3{color:var(--signal)}
+  .phase p{color:var(--dim);line-height:1.6;font-size:16px}
+  .phase ul{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .phase li{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);padding-left:20px;position:relative;line-height:1.5}
+  .phase li::before{content:'→';position:absolute;left:0;color:var(--signal-dim)}
+
+  .result{background:var(--void-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:44px}
+  @media(max-width:760px){.grid3{grid-template-columns:1fr}}
+  .stat{padding:24px 0}
+  .stat .big{font-family:'IBM Plex Mono',monospace;font-size:clamp(30px,4vw,46px);color:var(--signal);font-weight:600;line-height:1}
+  .stat .lbl{color:var(--dim);margin-top:12px;line-height:1.5;font-size:15px}
+
+  .steps{display:flex;flex-direction:column;gap:0;margin-top:40px;counter-reset:s}
+  .step{display:grid;grid-template-columns:80px 1fr;gap:24px;padding:28px 0;border-top:1px solid var(--line);align-items:baseline}
+  .step:last-child{border-bottom:1px solid var(--line)}
+  .step .n{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--signal)}
+  .step h4{font-size:clamp(19px,2.4vw,26px);font-weight:600;margin-bottom:8px}
+  .step p{color:var(--dim);line-height:1.6;font-size:15px;max-width:60ch}
+
+  .final{text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px}
+  .final h2{max-width:24ch}
+  .final .lead{margin-bottom:8px}
+  .price{font-family:'IBM Plex Mono',monospace;color:var(--dim);font-size:14px;letter-spacing:1px}
+
+  footer{
+    padding: 60px clamp(20px, 6vw, 90px); 
+    border-top: 1px solid var(--line); 
+    color: var(--dim); 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    gap: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--void);
+  }
+  footer a { color: var(--dim); text-decoration: none; margin-right: 25px; transition: color 0.2s ease; }
+  footer a:hover { color: var(--ink); }
+
+  .noise{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+
+<nav class="main-nav">
+  <a href="index.html" class="mono" style="display:flex; align-items:center; gap:14px; text-decoration:none;">
+    <img src="favicon.png" alt="" style="width:24px; height:24px; object-fit:contain;">
+    <div class="nav-brand-text">
+      <span style="font-weight:600; line-height:1.2;">Apophasis Labs</span>
+      <span class="nav-brand-demo">- DEMO</span>
+    </div>
+  </a>
+  
+  <div class="nav-channels mono">
+    <div class="dropdown" id="menuDropdown">
+      <button class="dropbtn mono" id="dropdownBtn">Kanäle [+]</button>
+      <div class="dropdown-content">
+        <a href="decoherence.html">Kanal 01 // <br>Decoherence</a>
+        <a href="precipitation.html">Kanal 02 // <br> Precipitation</a>
+        <a href="nucleation.html">Kanal 03 // <br> Nucleation</a>
+        <a href="index.html">Kanal 04-∞ // <br>Not Collapsed</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<canvas id="bg"></canvas>
+<div class="noise"></div>
+
+<div class="site-container">
+  <main class="site-content">
+
+    <section class="hero">
+      <div class="kicker">Kanal 01 // Decoherence</div>
+      <h1><span class="l1">Erst der Kopf klar</span><br><span class="l2">Dann die Maschine</span></h1>
+      <p>Alle automatisieren gerade ihr Business mit KI. Du spürst den Druck — und sollst Tools kaufen, die du nicht verstehst. Decoherence dreht die Reihenfolge um: zuerst Klarheit, dann das System, das wirklich deins ist.</p>
+      <div class="cta-row">
+        <a href="#cta" class="btn solid">Gespräch anfordern</a>
+        <a href="#method" class="btn ghost">Wie es funktioniert</a>
+      </div>
+      <div class="scrollhint mono">↓ scrollen</div>
+    </section>
+
+    <section class="pain">
+      <div class="eyebrow mono reveal">Der Druck</div>
+      <h2 class="reveal">Es geht nicht um KI. Es geht um das Gefühl, abgehängt zu werden</h2>
+      <div class="quote reveal">„Alle um mich herum automatisieren. Ich weiß nicht mal, <em>wo ich anfangen</em> soll — und fühle mich dabei wie der Letzte."</div>
+      <p class="lead reveal">Das ist kein Wissensproblem. Es ist Rauschen. Zu viele Stimmen, zu viele Tools, zu viel FOMO. In diesem Zustand kaufst du Technik, die du nicht durchdringst, fühlst dich danach noch unsicherer — und der Druck bleibt. Die Verkäufer da draußen verkaufen dir die Maschine, solange dein Kopf noch im Lärm steckt. Genau das ist der Fehler.</p>
+    </section>
+
+    <section id="method">
+      <div class="eyebrow mono reveal">Die Methode</div>
+      <h2 class="reveal">Decoherence: vom Rauschen zur Entscheidung</h2>
+      <p class="lead reveal">In der Physik ist Decoherence der Moment, in dem aus tausend überlagerten Möglichkeiten <strong style="color:var(--ink)">eine</strong> Realität wird. Genau das machen wir mit deinem Business — in zwei Phasen, in dieser Reihenfolge.</p>
+      <div class="phases">
+        <div class="phase one reveal">
+          <div class="num mono">PHASE 01 — SIGNAL</div>
+          <h3>Den Kopf klar</h3>
+          <p>Bevor irgendeine Zeile Automation gebaut wird, lösen wir das Rauschen auf. Was brauchst <em>du</em> wirklich — nicht, was deine Peers gerade hypen? Wir trennen Signal von FOMO und schneiden die Frage auf das eine Problem herunter, dessen Lösung tatsächlich etwas bewegt.</p>
+          <ul>
+            <li>FOMO und Peer-Druck rausnehmen</li>
+            <li>Den echten Engpass finden</li>
+            <li>Entscheidung statt Überlagerung</li>
+          </ul>
+        </div>
+        <div class="phase two reveal">
+          <div class="num mono">PHASE 02 — SYSTEM</div>
+          <h3>Dann die Maschine</h3>
+          <p>Jetzt — und erst jetzt — wird gebaut. Eine konkrete KI-/Automations-Maschine, zugeschnitten auf genau das, was nach der Klärung übrig blieb. Kein Tool-Zoo, kein Blindkauf: ein System, das du verstehst, das dir gehört und das ohne dich weiter流水.</p>
+          <ul>
+            <li>Maßgeschneiderte Automation</li>
+            <li>Du verstehst jeden Teil</li>
+            <li>Läuft selbstständig weiter</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="result">
+      <div class="eyebrow mono reveal">Das Ergebnis</div>
+      <h2 class="reveal">Du wirst zum Steuermann. Nicht zum Getriebenen</h2>
+      <div class="grid3">
+        <div class="stat reveal"><div class="big mono">0</div><div class="lbl">FOMO. Du entscheidest aus Klarheit, nicht aus Angst, etwas zu verpassen.</div></div>
+        <div class="stat reveal"><div class="big mono">1</div><div class="lbl">System, das deins ist — verstanden, gesteuert, nicht blind zugekauft.</div></div>
+        <div class="stat reveal"><div class="big mono">∞</div><div class="lbl">läuft weiter, ohne dass du daneben stehst. Du gewinnst Zeit und Kopf zurück.</div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow mono reveal">Der Ablauf</div>
+      <h2 class="reveal">Wie eine Zusammenarbeit läuft</h2>
+      <div class="steps">
+        <div class="step reveal"><div class="n mono">01</div><div><h4>Das Gespräch</h4><p>Ein ehrliches Erstgespräch. Wir schauen, ob dein Problem zu Decoherence passt — und ob wir zusammenpassen. Kein Pitch, keine Verkaufsschleife.</p></div></div>
+        <div class="step reveal"><div class="n mono">02</div><div><h4>Signal-Phase</h4><p>Wir lösen das Rauschen auf und legen offen, was wirklich gebaut werden muss. Am Ende steht eine klare Entscheidung statt einer Wunschliste.</p></div></div>
+        <div class="step reveal"><div class="n mono">03</div><div><h4>System-Phase</h4><p>Wir bauen die Maschine — gemeinsam, transparent, so dass du sie nach der Übergabe selbst steuern und erweitern kannst.</p></div></div>
+        <div class="step reveal"><div class="n mono">04</div><div><h4>Übergabe</h4><p>Du gehst mit einem laufenden System und einem klaren Kopf raus. Kein Abhängigkeitsverhältnis — Souveränität ist das Ziel.</p></div></div>
+      </div>
+    </section>
+
+    <section id="cta" class="final">
+      <div class="eyebrow mono reveal">Der nächste Schritt</div>
+      <h2 class="reveal">Hör auf, Tools zu kaufen. Fang an zu sehen</h2>
+      <p class="lead reveal">Decoherence ist nichts für jeden — sondern für Menschen, die genug Druck spüren, um wirklich klar werden zu wollen, bevor sie bauen. Wenn dich das anspricht, lass uns reden.</p>
+      <a href="mailto:decoherence@apophasislabs.com?subject=Anfrage%20Decoherence" class="btn solid reveal">Gespräch anfordern</a>
+      <div class="price mono reveal">Auf Anfrage · begrenzte Plätze</div>
+    </section>
+
+    <div class="chat-widget" id="chatWidget">
+      <div class="chat-popup">
+        <div class="chat-popup-header">
+          <span>DECOHERENCE_SUB_CORE // AI</span>
+          <span class="status-badge">PENDING</span>
+        </div>
+        <div class="chat-popup-body">
+          Die Schnittstelle zur autopoietischen Sprachauskopplung befindet sich im Latenzraum.
+          <div class="chat-input-locked">
+            <input type="text" value="Eingabe gesperrt" disabled>
+          </div>
+        </div>
+      </div>
+      <button class="chat-trigger" id="chatTrigger">
+        <span class="mono" style="font-size: 10px; letter-spacing: 2px;">KI Interface // Pending</span>
+      </button>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="mono">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+    <span class="mono">© 2026 APOPHASIS LABS</span>
+  </footer>
+</div>
+
+<script>
+  const dropdown = document.getElementById('menuDropdown');
+  const dropdownBtn = document.getElementById('dropdownBtn');
+
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+  });
+
+  const chatWidget = document.getElementById('chatWidget');
+  const chatTrigger = document.getElementById('chatTrigger');
+
+  chatTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chatWidget.classList.toggle('open');
+    
+    chatTrigger.classList.add('click-active');
+    setTimeout(() => {
+      chatTrigger.classList.remove('click-active');
+    }, 40);
+  });
+
+  document.addEventListener('click', () => {
+    chatWidget.classList.remove('open');
+  });
+  chatWidget.addEventListener('click', (e) => e.stopPropagation());
+
+  (function() {
+    const mainNav = document.querySelector('nav.main-nav');
+    let lastScrollY = window.scrollY;
+    let accumulatedDelta = 0; 
+
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY;
+
+      if (currentScrollY <= 40) {
+        mainNav.classList.remove('nav-hidden');
+        accumulatedDelta = 0;
+      } else {
+        accumulatedDelta += deltaY;
+        if (accumulatedDelta > 35) {
+          mainNav.classList.add('nav-hidden');
+          if (dropdown) dropdown.classList.remove('show');
+          accumulatedDelta = 0;
+        } else if (accumulatedDelta < -25) {
+          mainNav.classList.remove('nav-hidden');
+          accumulatedDelta = 0;
+        }
+      }
+      accumulatedDelta = Math.max(-60, Math.min(60, accumulatedDelta));
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  })();
+
+  const io = new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting)x.target.classList.add('in')}),{threshold:.18});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const canvas = document.getElementById('bg');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, .1, 100);
+camera.position.z = 14;
+
+const COUNT = 2600;
+const positions = new Float32Array(COUNT*3);
+const chaos = new Float32Array(COUNT*3);
+const order = new Float32Array(COUNT*3);
+const colors = new Float32Array(COUNT*3);
+
+const cSignal = new THREE.Color(0xc8ff4d);
+const cIce = new THREE.Color(0x7fd4ff);
+const cDim = new THREE.Color(0x33414d);
+
+const side = Math.ceil(Math.cbrt(COUNT));
+let i=0;
+for(let x=0;x<side && i<COUNT;x++)
+for(let y=0;y<side && i<COUNT;y++)
+for(let z=0;z<side && i<COUNT;z++){
+  const ox=(x/(side-1)-.5), oy=(y/(side-1)-.5), oz=(z/(side-1)-.5);
+  const r=7;
+  order[i*3]=ox*r*2; order[i*3+1]=oy*r*2; order[i*3+2]=oz*r*2;
+  chaos[i*3]=(Math.random()-.5)*40;
+  chaos[i*3+1]=(Math.random()-.5)*30;
+  chaos[i*3+2]=(Math.random()-.5)*40;
+  positions[i*3]=chaos[i*3]; positions[i*3+1]=chaos[i*3+1]; positions[i*3+2]=chaos[i*3+2];
+  const mix = Math.random();
+  const col = mix<.12? cSignal : (mix<.24? cIce : cDim);
+  colors[i*3]=col.r; colors[i*3+1]=col.g; colors[i*3+2]=col.b;
+  i++;
+}
+
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+const mat = new THREE.PointsMaterial({size:.07, vertexColors:true, transparent:true, opacity:.9, depthWrite:false, blending:THREE.AdditiveBlending});
+const points = new THREE.Points(geo, mat);
+scene.add(points);
+
+const lineGeo = new THREE.BufferGeometry();
+const linePos=[];
+for(let k=0;k<160;k++){
+  const a=Math.floor(Math.random()*COUNT), b=Math.floor(Math.random()*COUNT);
+  linePos.push(order[a*3],order[a*3+1],order[a*3+2], order[b*3],order[b*3+1],order[b*3+2]);
+}
+lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos,3));
+const lineMat = new THREE.LineBasicMaterial({color:0x1e2a18, transparent:true, opacity:0});
+const lines = new THREE.LineSegments(lineGeo, lineMat);
+scene.add(lines);
+
+let collapse = 0, target = 0;
+function onScroll(){
+  const max = document.body.scrollHeight - window.innerHeight;
+  const currentScroll = Math.max(0, window.scrollY || window.pageYOffset);
+  target = max>0 ? Math.max(0, Math.min(currentScroll/max,1)) : 0;
+}
+window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+let mx=0,my=0;
+window.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5);my=(e.clientY/window.innerHeight-.5);});
+
+const pos = geo.attributes.position.array;
+function tick(t){
+  collapse += (target-collapse)*0.05;
+  const e = collapse<.5 ? 2*collapse*collapse : 1-Math.pow(-2*collapse+2,2)/2;
+  for(let j=0;j<COUNT;j++){
+    const idx=j*3;
+    const breathe = Math.sin(t*0.0006 + j)*0.15*(1-e);
+    pos[idx]   = chaos[idx]   + (order[idx]  -chaos[idx])  *e + breathe;
+    pos[idx+1] = chaos[idx+1] + (order[idx+1]-chaos[idx+1])*e + breathe;
+    pos[idx+2] = chaos[idx+2] + (order[idx+2]-chaos[idx+2])*e;
+  }
+  geo.attributes.position.needsUpdate = true;
+  lineMat.opacity = e*0.5;
+  points.rotation.y = t*0.00008 + mx*0.4;
+  points.rotation.x = my*0.25;
+  lines.rotation.copy(points.rotation);
+  camera.position.x += (mx*2 - camera.position.x)*0.04;
+  camera.position.y += (-my*2 - camera.position.y)*0.04;
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+let lastWidth = window.innerWidth;
+window.addEventListener('resize',()=>{
+  if(window.innerWidth === lastWidth) return;
+  lastWidth = window.innerWidth;
+  
+  camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  onScroll();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRECIPITATION — Rauschen überladen. Signal ausfällen</title>
+
+<link class="favicon" rel="icon" type="image/png" href="favicon.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  :root{
+    --void:#030406; --void-2:#090b0e; --ink:#e2e8f0; --dim:#4a5568;
+    --signal:#10b981; --signal-bright:#34d399; --warn:#f43f5e;
+    --line:#121720;
+    --pulse-cycle: 4s;
+    --nav-bg: rgba(6, 7, 10, 0.92);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Fraunces',serif;background:var(--void);color:var(--ink);overflow-x:hidden}
+  #bg{position:fixed;inset:0;z-index:0}
+  
+  /* GENORMTES LAYOUT-SYSTEM */
+  .site-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+  .site-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mono{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase;}
+  section{padding:clamp(60px,12vh,140px) clamp(20px,6vw,90px);position:relative}
+
+  /* FIXED HEADER SYSTEM MIT UNIFORMER FARBLOGIK (PULS BEIBEHALTEN) */
+  nav.main-nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center;
+    padding: clamp(16px, 3vw, 30px) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--nav-bg);
+    transition: transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000), border-color 0.3s, background-color 0.3s;
+    will-change: transform;
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  nav.main-nav.nav-hidden {
+    transform: translateY(-100%);
+  }
+  
+  /* Links und Buttons nutzen jetzt den weichen Farbwechsel zu Gray */
+  nav.main-nav a, .dropbtn { 
+    color: var(--ink); 
+    text-decoration: none; 
+    transition: color 0.2s ease; 
+  }
+  nav.main-nav a:hover, .dropbtn:hover { 
+    color: var(--dim); 
+  }
+
+  nav.main-nav a:hover .nav-brand-demo {
+    color: var(--subtext, var(--dim));
+    opacity: 0.5;
+  }
+  .nav-channels { 
+    display: flex; 
+    align-items: center; 
+  }
+
+  /* BRAND HEADER STYLING */
+  .nav-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    color: inherit; /* Erbt die Farbe des a-Tags für synchronen Hover */
+  }
+  .nav-brand-demo {
+    display: block;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-variation-settings: 'wght' 600;
+    text-transform: uppercase;
+    color: var(--signal, var(--subtext, var(--dim)));
+    opacity: 0.8;
+    transform: none;
+    text-shadow: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* DROPDOWN SYSTEM */
+  .dropdown { position: relative; display: inline-block; }
+  .dropbtn { 
+    background: none; border: none; 
+    cursor: pointer; font-weight: 500; padding: 5px 0;
+    outline: none;
+  }
+  .dropdown-content {
+    display: none; position: absolute; 
+    left: 50%; transform: translateX(-50%); 
+    top: 100%; 
+    background-color: var(--void); border: 1px solid var(--line);
+    min-width: 240px; border-radius: 4px; overflow: hidden; margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  @media(max-width: 480px) {
+    .dropdown-content { 
+      min-width: 170px; 
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .dropdown-content a { 
+    padding: 14px 20px; 
+    display: block; 
+    font-size: 10px; 
+    color: var(--ink);
+    border-bottom: 1px solid var(--line); 
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .dropdown-content a:hover { 
+    background: var(--line); 
+    color: var(--ink) !important;
+    opacity: 1;
+  }
+  .dropdown.show .dropdown-content { display: block; }
+
+  /* TACT-SYNCHRONIZED GREEN PULSE ANIMATION */
+  @keyframes greenPulse {
+    0% {
+      border-color: var(--line);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.03);
+    }
+    50% {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+    100% {
+      border-color: var(--line);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.03);
+    }
+  }
+
+  /* TACT-SYNCHRONIZED RED LOCK/PENDING PULSE */
+  @keyframes redPulse {
+    0% {
+      border-color: rgba(244, 63, 94, 0.30);
+      box-shadow: 0 0 8px rgba(244, 63, 94, 0.04), inset 0 0 0 rgba(244, 63, 94, 0.00);
+      background: rgba(244, 63, 94, 0.04);
+    }
+    50% {
+      border-color: rgba(244, 63, 94, 0.90);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.24), inset 0 0 14px rgba(244, 63, 94, 0.10);
+      background: rgba(244, 63, 94, 0.10);
+    }
+    100% {
+      border-color: rgba(244, 63, 94, 0.30);
+      box-shadow: 0 0 8px rgba(244, 63, 94, 0.04), inset 0 0 0 rgba(244, 63, 94, 0.00);
+      background: rgba(244, 63, 94, 0.04);
+    }
+  }
+
+  /* ANCHOR METRICS PANEL */
+  .intercept-panel {
+    border: 1px solid var(--line); background: rgba(9,11,14,0.7);
+    font-family: 'IBM Plex Mono', monospace; padding: 20px; margin-top: 40px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; font-size: 11px;
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  .panel-tag { color: var(--signal); font-weight: 700; }
+
+  .reveal{opacity:0;transform:translateY(15px);transition:opacity .4s,transform .4s}
+  .reveal.in{opacity:1;transform:none}
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--dim);margin-bottom:20px}
+  h2{font-size:clamp(32px,4.5vw,58px);line-height:1.05;font-weight:900;letter-spacing:-.02em;max-width:22ch;margin-bottom:25px}
+  .lead{font-size:clamp(16px,1.8vw,20px);color:var(--dim);max-width:58ch;line-height:1.6}
+
+  /* COGNITIVE SHIFT SECTION */
+  .stutter-box {
+    margin-top: 40px; border-left: 2px dashed var(--warn); padding-left: 30px; max-width: 50ch;
+  }
+  .stutter-box h3 { font-size: 24px; font-weight: 900; margin-bottom: 10px; color: var(--warn); }
+
+  /* MARKED GRID */
+  .matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+  @media(max-width:760px){.matrix-grid{grid-template-columns:1fr;}}
+  
+  .card { 
+    border: 1px solid var(--line); 
+    padding: 40px; 
+    background: var(--void-2); 
+    position: relative; 
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  .card .tag { position: absolute; top: 20px; right: 20px; font-family: 'IBM Plex Mono', monospace; color: var(--dim); font-size: 10px; }
+  .card h4 { font-size: 28px; font-weight: 900; margin-bottom: 15px; }
+  .card p { color: var(--dim); line-height: 1.6; font-size: 15px; }
+
+  /* PERSISTENT CHAT INTERFACE */
+  .chat-widget {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: clamp(20px, 4vw, 40px);
+    margin-left: auto;
+    margin-right: clamp(20px, 4vw, 40px);
+    margin-bottom: clamp(20px, 4vw, 40px);
+    width: max-content;
+    z-index: 1000;
+    font-family: 'IBM Plex Mono', monospace;
+    top: auto; left: auto; right: auto;
+  }
+  .chat-trigger {
+    background: var(--void-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 14px 28px;
+    border-radius: 0px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    transition: border-color 0.4s, transform 0.4s, box-shadow 0.4s;
+    outline: none;
+    position: relative;
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  .chat-trigger:hover {
+    border-color: var(--signal);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(16,185,129,0.15);
+  }
+
+  .chat-trigger::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 0px;
+    border: 1px solid var(--signal);
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.7);
+    opacity: 0;
+    transform: scale(1.12);
+    pointer-events: none;
+    transition: opacity 1.3s cubic-bezier(0.16, 1, 0.3, 1), transform 1.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chat-trigger.click-active::after {
+    opacity: 1;
+    transform: scale(1);
+    transition: none;
+  }
+
+  .chat-popup {
+    position: absolute;
+    bottom: calc(100% + 16px);
+    right: 0;
+    width: 320px;
+    background: rgba(3, 4, 6, 0.96);
+    border: 1px solid var(--line);
+    border-radius: 0px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    opacity: 0;
+    transform: translateY(15px) scale(0.96);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    /* äußere Border bleibt grün synchronisiert */
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  .chat-widget.open .chat-popup {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .chat-popup-header {
+    background: var(--void-2);
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  
+  .chat-popup-header span:first-child {
+    color: var(--signal);
+    font-weight: 600;
+  }
+  
+  .status-badge {
+    color: var(--warn);
+    border: 1px solid rgba(244,63,94,0.35);
+    background: rgba(244,63,94,0.04);
+    padding: 3px 9px;
+    border-radius: 0px;
+    font-size: 9px;
+    font-weight: 900;
+    display: inline-block;
+    text-transform: uppercase;
+    animation: redPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+
+  .chat-popup-body {
+    padding: 22px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--dim);
+  }
+  
+  .chat-input-locked {
+    margin-top: 18px;
+  }
+  .chat-input-locked input {
+    width: 100%;
+    background: var(--void);
+    border: 1px solid rgba(244,63,94,0.35);
+    color: var(--warn);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 11px 14px;
+    border-radius: 0px;
+    letter-spacing: 2px;
+    text-align: center;
+    cursor: not-allowed;
+    outline: none;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    user-select: none;
+    pointer-events: none;
+    opacity: 1;
+    animation: redPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  .chat-input-locked input:disabled {
+    -webkit-text-fill-color: var(--warn);
+  }
+
+  /* HERO */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    gap:30px;
+    padding-top:clamp(190px, 24vh, 260px);
+    max-width:65vw;
+  }
+  @media(max-width:900px){.hero{max-width:100vw;}}
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:5px;text-transform:uppercase;color:var(--signal);font-weight:600;}
+  h1{font-size:clamp(40px,7.5vw,110px);line-height:.92;font-weight:900;letter-spacing:-.03em;}
+  h1 span.alt { color:transparent; -webkit-text-stroke: 1px var(--ink); font-style: italic; }
+  .hero p{font-size:clamp(17px,2vw,22px);color:var(--dim);max-width:50ch;line-height:1.6;}
+  .cta-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+  
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:2px;text-decoration:none;padding:18px 32px;transition:none;border:1px solid var(--line)}
+  .btn.solid{background:var(--signal);color:#000;font-weight:700;border-color:var(--signal);}
+  .btn.solid:hover{background:var(--signal-bright);box-shadow:4px 4px 0px var(--line);}
+  .btn.ghost{color:var(--ink);background:transparent;}
+  .btn.ghost:hover{border-color:var(--ink);background:rgba(255,255,255,0.02)}
+
+  /* STEPS AS AN ENGINE LOG */
+  .log-engine { margin-top: 50px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .log-row { display: grid; grid-template-columns: 120px 200px 1fr; padding: 20px 0; border-top: 1px solid var(--line); color: var(--dim); }
+  .log-row:last-child { border-bottom: 1px solid var(--line); }
+  .log-row .status { color: var(--signal); font-weight: 600; }
+  .log-row .msg { color: var(--ink); font-family: 'Fraunces', serif; font-size: 16px; }
+  
+  @media(max-width: 720px) {
+    .log-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 16px 0;
+    }
+    .log-row .msg {
+      font-size: 15px;
+      margin-top: 2px;
+    }
+  }
+
+  /* FINAL */
+  .final { border-top: 1px solid var(--line); padding-top: 160px; padding-bottom: 160px; }
+  
+  /* FOOTER WITH SYNCHRONIZED GREEN PULSE */
+  footer{
+    padding: 60px clamp(20px, 6vw, 90px); 
+    border-top: 1px solid var(--line); 
+    color: var(--dim); 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    gap: 20px;
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 11px; 
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--void);
+    animation: greenPulse var(--pulse-cycle) infinite ease-in-out;
+  }
+  footer a { color: var(--dim); text-decoration: none; margin-right: 25px; }
+  footer a:hover { color: var(--ink); }
+
+  .noise{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.04;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+
+<nav class="main-nav">
+  <a href="index.html" class="mono" style="display:flex; align-items:center; gap:14px; text-decoration:none;">
+    <img src="favicon.png" alt="" style="width:24px; height:24px; object-fit:contain;">
+    <div class="nav-brand-text">
+      <span style="font-weight:600; line-height:1.2;">Apophasis Labs</span>
+      <span class="nav-brand-demo">- DEMO</span>
+    </div>
+  </a>
+  
+  <div class="nav-channels mono">
+    <div class="dropdown" id="menuDropdown">
+      <button class="dropbtn mono" id="dropdownBtn">Kanäle [+]</button>
+      <div class="dropdown-content">
+        <a href="decoherence.html">Kanal 01 // <br>Decoherence</a>
+        <a href="precipitation.html">Kanal 02 // <br>Precipitation</a>
+        <a href="nucleation.html">Kanal 03 // <br>Nucleation</a>
+        <a href="index.html">Kanal 04-∞ // <br>Not Collapsed</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<canvas id="bg"></canvas>
+<div class="noise"></div>
+
+<div class="site-container">
+  <main class="site-content">
+
+    <section class="hero">
+      <div class="kicker">Kanal 02 // Precipitation</div>
+      <h1>Märkte verzeihen keine <span class="alt">Latenz</span></h1>
+      <p>Ein ununterbrochener, stotternder Strom aus digitalem Lärm flutet den Raum. Wer manuell analysiert, verliert. Precipitation bricht die Latenz: Unser Extraktor fegt durch das unstructured Rauschen, kalibriert Parameter autonom und fegt Leads ohne Umwege in deine Struktur.</p>
+      
+      <div class="cta-row">
+        <a href="#anforderung" class="btn solid">Ausfällung zünden</a>
+        <a href="#kybernetik" class="btn ghost">Stochastisches Protokoll</a>
+      </div>
+
+      <div class="intercept-panel">
+        <div><span class="panel-tag">SCANNER_STATUS:</span> ACTIVE // HIGH_FREQ</div>
+        <div><span class="panel-tag">SHANNON_ENTROPY:</span> <span id="entropy-val">1.942</span> BIT</div>
+        <div><span class="panel-tag">TARGET_MATRIX:</span> SOCIAL_U(1)</div>
+        <div><span class="panel-tag">LAST_EXTRACT:</span> <span id="last-intent" style="color:var(--ink)">SYS_IDLE</span></div>
+      </div>
+    </section>
+
+    <section id="kybernetik" class="pain">
+      <div class="eyebrow mono reveal">Der transiente Zustand</div>
+      <h2 class="reveal">Das 120-Sekunden-Vakuum</h2>
+      <p class="lead reveal">Wenn makroskopische Parameter den Markt aufladen – Merkel oder Obama Fidget Spinner erwähnen –, passiert auf Mikro-Ebene etwas Unfaires: Schlagartig implodieren Kundenwünsche im Netz. Es entsteht ein hyper-transientes Vakuum akuten Kaufzwangs.</p>
+      
+      <div class="stutter-box reveal">
+        <h3>Desperation isolieren</h3>
+        <p class="lead" style="color:var(--ink)">Christina sucht verzweifelt nach Bezugsquellen. Monika fleht digital: „HILFE. FIDGET SPINNER. SCHNELL.“ Dieses Signal hat eine infinitesimale Halbwertszeit. Nach zwei Minuten dekoheriert die Kaufenergie. Sie gehört der Entropie – oder einem System, das schneller extrahiert als das menschliche Gehirn begreift.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow mono reveal">Die Ausfällung</div>
+      <h2 class="reveal">Stochastische Resonazonanz statt Tool-Wahn</h2>
+      <p class="lead reveal">Precipitation is kein braver Scraper. Es ist eine kybernetische Extraktions-Maschine, die das Hintergrundrauschen nutzt, um schwache Signale zu verstärken, bis sie als kristalline Lead-Struktur ausfallen.</p>
+      
+      <div class="matrix-grid">
+        <div class="card reveal">
+          <div class="tag">METRIK_0A</div>
+          <h4>Parameter-Koppelung</h4>
+          <p>Das System scannt nicht starr nach Keywords. Es misst die makroskopische Dichte sozialer Feeds. Schlägt ein Trend-Impuls ein, verschieben sich die topologischen Suchvektoren vollautomatisch. Der Scraper weiß, wonach er suchen muss, bevor der Benutzer es konfiguriert hat.</p>
+        </div>
+        <div class="card reveal">
+          <div class="tag">METRIK_0B</div>
+          <h4>Instant Outreach</h4>
+          <p>Ausgefallene Datenpunkte verstauben nicht. Precipitation berechnet sofort den psychologischen Triggerpunkt, schleust den Lead direkt in das CRM und generiert die erste, neuronale Outreach-Welle für den Operator. Der Kunde wird im Moment seiner höchsten kinetischen Energie abgefangen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow mono reveal">System-Protokoll</div>
+      <h2 class="reveal">Der Extraktions-Prozess im Log</h2>
+      
+      <div class="log-engine reveal">
+        <div class="log-row"><div>[16:44:02]</div><div class="status">SIGNAL_FOUND</div><div class="msg">Christina initiiert Suchvektor: "Suche Fidgetspinner" // Relevanz 98.4%</div></div>
+        <div class="log-row"><div>[16:44:18]</div><div class="status">IMPLOSION</div><div class="msg">Monika bricht durch Rauschen: "HILFE. FIGET SPINNER. SCHNELL."</div></div>
+        <div class="log-row"><div>[16:44:19]</div><div class="status">CRM_INJECT</div><div class="msg">Stochastische Resonanz stabilisiert Datenpaket. Injektion Instanz_01 erfolgreich.</div></div>
+        <div class="log-row"><div>[16:44:20]</div><div class="status">OUTREACH_1</div><div class="msg">Neuronales Skript an Benutzer übergeben. Latenz-Arbitrage gesichert.</div></div>
+      </div>
+    </section>
+
+    <section id="anforderung" class="final" style="text-align: center;">
+      <div class="eyebrow mono reveal">Kernel Request</div>
+      <h2 class="reveal" style="margin: 0 auto 30px auto;">Nutze das Rauschen. Bevor es dich austrocknet</h2>
+      <p class="lead reveal" style="margin: 0 auto 40px auto;">Precipitation schließt die Flanke zwischen Markt-Impuls und Liquidität. Keine Latenz. Keine Kompromisse.</p>
+      <a href="mailto:precipitation@apophasislabs.com?subject=Anfrage%20Precipitation" class="btn solid reveal">Extraktion autorisieren</a>
+    </section>
+
+    <div class="chat-widget" id="chatWidget">
+      <div class="chat-popup">
+        <div class="chat-popup-header">
+          <span>PRECIPITATION_SUB_CORE // AI</span>
+          <span class="status-badge">PENDING</span>
+        </div>
+        <div class="chat-popup-body">
+          Die Schnittstelle zur autopoietischen Sprachauskopplung befindet sich im Latenzraum.
+          <div class="chat-input-locked">
+            <input type="text" value="Eingabe gesperrt" disabled readonly tabindex="-1" aria-disabled="true">
+          </div>
+        </div>
+      </div>
+      <button class="chat-trigger" id="chatTrigger">
+        <span class="mono" style="font-size: 10px; letter-spacing: 2px;">KI Interface // Pending</span>
+      </button>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="mono">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+    <span class="mono">© 2026 APOPHASIS LABS</span>
+  </footer>
+</div>
+
+<script>
+  const dropdown = document.getElementById('menuDropdown');
+  const dropdownBtn = document.getElementById('dropdownBtn');
+  dropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+  document.addEventListener('click', () => { dropdown.classList.remove('show'); });
+
+  const chatWidget = document.getElementById('chatWidget');
+  const chatTrigger = document.getElementById('chatTrigger');
+
+  chatTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chatWidget.classList.toggle('open');
+    
+    chatTrigger.classList.add('click-active');
+    setTimeout(() => {
+      chatTrigger.classList.remove('click-active');
+    }, 40);
+  });
+
+  document.addEventListener('click', () => {
+    chatWidget.classList.remove('open');
+  });
+  chatWidget.addEventListener('click', (e) => e.stopPropagation());
+
+  (function() {
+    const mainNav = document.querySelector('nav.main-nav');
+    let lastScrollY = window.scrollY;
+    let accumulatedDelta = 0; 
+
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY;
+
+      if (currentScrollY <= 40) {
+        mainNav.classList.remove('nav-hidden');
+        accumulatedDelta = 0;
+      } else {
+        accumulatedDelta += deltaY;
+        if (accumulatedDelta > 35) {
+          mainNav.classList.add('nav-hidden');
+          if (dropdown) dropdown.classList.remove('show');
+          accumulatedDelta = 0;
+        } else if (accumulatedDelta < -25) {
+          mainNav.classList.remove('nav-hidden');
+          accumulatedDelta = 0;
+        }
+      }
+      accumulatedDelta = Math.max(-60, Math.min(60, accumulatedDelta));
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  })();
+
+  const io = new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting)x.target.classList.add('in')}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+
+<script>
+  const canvas = document.getElementById('bg');
+  const ctx = canvas.getContext('2d');
+
+  let cachedWidth = window.innerWidth;
+  canvas.width = cachedWidth;
+  canvas.height = window.innerHeight;
+
+  function resize() {
+    if (window.innerWidth !== cachedWidth) {
+      cachedWidth = window.innerWidth;
+      canvas.width = cachedWidth;
+      canvas.height = window.innerHeight;
+    }
+  }
+  window.addEventListener('resize', resize);
+
+  const rawDataPool = [
+    "CHRISTINA: Suche fidgetspinner",
+    "MONIKA: HILFE. FIGET SPINNER. SCHNELL.",
+    "PARAM_SET: MERKEL_OBAMA_TRANSCRIPT_LOADED",
+    "INTENT_LOCKED // ID_982193",
+    "STOCHASTIC_RESONANCE_DELTA_H_MINUS",
+    "SHANNON_ENTROPY_COLLAPSE_IN_PROGRESS",
+    "CRM_INJECT: OUTREACH_1_READY",
+    "U(1)_EICHFELD_SCANNING_SUB_MATRIX_02",
+    "DESPERATION_DETECTED // LATENCY_ZERO",
+    "01010110 01000001 01001011 01010101 01001101"
+  ];
+
+  let lines = [];
+  const maxLines = 25;
+  for(let i=0; i<maxLines; i++) {
+    lines.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      text: rawDataPool[Math.floor(Math.random() * rawDataPool.length)],
+      speed: 3 + Math.random() * 12,
+      opacity: 0.05 + Math.random() * 0.15,
+      scale: 10 + Math.floor(Math.random() * 6)
+    });
+  }
+
+  let scrollPos = 0;
+  window.addEventListener('scroll', () => {
+    const max = document.body.scrollHeight - window.innerHeight;
+    scrollPos = max > 0 ? window.scrollY / max : 0;
+  });
+
+  let stutterFrameCount = 0;
+  let targetBox = { x: 0, y: 0, w: 0, h: 0, active: false, label: "" };
+
+  function drawEngine(t) {
+    requestAnimationFrame(drawEngine);
+
+    stutterFrameCount++;
+    const stutterThreshold = 1 + Math.floor(scrollPos * 14); 
+    if (stutterFrameCount % stutterThreshold !== 0 && scrollPos > 0.05) {
+      return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if(Math.random() < 0.2) {
+      document.getElementById('entropy-val').innerText = (2.105 - (scrollPos * 1.85) + Math.random()*0.05).toFixed(3);
+    }
+    if(Math.random() < 0.03) {
+      const activeIntent = Math.random() < 0.5 ? "MONIKA [CRITICAL]" : "CHRISTINA [DETECTED]";
+      document.getElementById('last-intent').innerText = scrollPos > 0.1 ? activeIntent : "SCANNING...";
+    }
+
+    const barrierY = scrollPos * canvas.height;
+    
+    ctx.strokeStyle = scrollPos > 0.1 ? 'rgba(244, 63, 94, 0.3)' : 'rgba(16, 185, 129, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, barrierY);
+    ctx.lineTo(canvas.width, barrierY);
+    ctx.stroke();
+
+    ctx.font = "bold 11px 'IBM Plex Mono', monospace";
+    
+    lines.forEach((line, index) => {
+      const isPrecipitated = line.y < barrierY;
+
+      if (isPrecipitated) {
+        ctx.fillStyle = `rgba(16, 185, 129, ${line.opacity * 2.5})`;
+        if(Math.random() < 0.02) line.text = rawDataPool[Math.floor(Math.random() * rawDataPool.length)];
+      } else {
+        ctx.fillStyle = `rgba(74, 85, 104, ${line.opacity})`;
+        if(Math.random() * (1 - scrollPos) > 0.7) {
+          line.x += (Math.random() - 0.5) * 40;
+          line.text = rawDataPool[Math.floor(Math.random() * rawDataPool.length)];
+        }
+      }
+
+      ctx.fillText(line.text, line.x, line.y);
+
+      line.y += line.speed * (1 + scrollPos * 2);
+      if (line.y > canvas.height) {
+        line.y = 0;
+        line.x = Math.random() * canvas.width;
+      }
+    });
+
+    ctx.strokeStyle = 'rgba(18, 23, 32, 0.4)';
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    
+    for(let x = 0; x < canvas.width; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for(let y = 0; y < canvas.height; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+
+    if (scrollPos < 0.4) {
+      if (Math.random() < 0.04 * (scrollPos * 4 + 1)) {
+        targetBox.active = true;
+        targetBox.x = Math.random() * (canvas.width - 300);
+        targetBox.y = Math.random() * canvas.height;
+        targetBox.w = 260 + Math.random() * 100;
+        targetBox.h = 45;
+        targetBox.label = Math.random() < 0.5 ? "TARGET_LOCKED: MONIKA" : "TARGET_LOCKED: CHRISTINA";
+      }
+    } else {
+      targetBox.active = false; 
+    }
+
+    if (targetBox.active && Math.random() < 0.75 && scrollPos < 0.4) {
+      ctx.strokeStyle = varColor('--signal');
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(targetBox.x, targetBox.y, targetBox.w, targetBox.h);
+      
+      ctx.fillStyle = varColor('--warn');
+      ctx.fillRect(targetBox.x - 4, targetBox.y - 4, 8, 2);
+      ctx.fillRect(targetBox.x - 4, targetBox.y - 4, 2, 8);
+      
+      ctx.fillStyle = varColor('--signal-bright');
+      ctx.font = "9px 'IBM Plex Mono', monospace";
+      ctx.fillText(targetBox.label, targetBox.x + 8, targetBox.y + 16);
+      ctx.fillText("CRM_STATUS: INJECTING...", targetBox.x + 8, targetBox.y + 32);
+
+      if(Math.random() < 0.15) targetBox.active = false;
+    }
+  }
+
+  function varColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  requestAnimationFrame(drawEngine);
+</script>
+</body>
+</html>

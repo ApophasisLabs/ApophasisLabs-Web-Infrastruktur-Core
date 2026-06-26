@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGB // APOPHASIS LABS</title>
+
+<link class="favicon" rel="icon" type="image/png" href="favicon.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  :root{ 
+    --void: #000000; 
+    --ink: #ffffff; 
+    --dim: #555555; 
+    --subtext: #555555;
+    --line: #111111; 
+    --nav-bg: rgba(6, 7, 10, 0.92);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Fraunces',serif;background-color:var(--void);color:var(--ink);overflow-x:hidden}
+  
+  /* GENORMTES LAYOUT-SYSTEM */
+  .site-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+  .site-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mono{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase;}
+  
+  /* HEADER SYSTEM MIT DREI GLEICHEN ABSTÄNDEN */
+  nav.main-nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center;
+    padding: clamp(16px, 3vw, 30px) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--nav-bg);
+    transition: transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000), border-color 0.3s, background-color 0.3s;
+    will-change: transform;
+  }
+  nav.main-nav.nav-hidden {
+    transform: translateY(-100%);
+  }
+  nav.main-nav a, .dropbtn { color: var(--ink); text-decoration: none; transition: color 0.2s ease; }
+  nav.main-nav a:hover, .dropbtn:hover { color: var(--dim); }
+
+  nav.main-nav a:hover .nav-brand-demo {
+    color: var(--subtext, var(--dim));
+    opacity: 0.5;
+  }
+  .nav-channels { 
+    display: flex; 
+    align-items: center; 
+  }
+
+  /* BRAND HEADER STYLING */
+  .nav-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    color: inherit;
+  }
+  .nav-brand-demo {
+    display: block;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-variation-settings: 'wght' 600;
+    text-transform: uppercase;
+    color: var(--signal, var(--subtext, var(--dim)));
+    opacity: 0.8;
+    transform: none;
+    text-shadow: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* DROPDOWN SYSTEM */
+  .dropdown { position: relative; display: inline-block; }
+  .dropbtn { 
+    background: none; border: none;
+    cursor: pointer; font-weight: 500; padding: 5px 0;
+    outline: none;
+  }
+  .dropdown-content {
+    display: none; position: absolute; 
+    left: 50%; transform: translateX(-50%); 
+    top: 100%; 
+    background-color: var(--void); border: 1px solid var(--line);
+    min-width: 240px; border-radius: 4px; overflow: hidden; margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  @media(max-width: 480px) {
+    .dropdown-content { 
+      min-width: 170px; 
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .dropdown-content a { 
+    padding: 14px 20px; 
+    display: block; 
+    font-size: 10px; 
+    color: var(--ink);
+    border-bottom: 1px solid var(--line); 
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .dropdown-content a:hover { 
+    background: var(--line); 
+    color: var(--ink) !important;
+    opacity: 1;
+  }
+  .dropdown.show .dropdown-content { display: block; }
+
+  /* LEGAL CONTENT FULL MOBILE OPTIMIZED */
+  section.legal-content { 
+    min-height: 80vh; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    padding: clamp(120px, 15vh, 160px) clamp(20px, 6vw, 90px) 80px clamp(20px, 6vw, 90px); 
+    max-width: 900px; 
+    width: 100%;
+    margin: 0 auto;
+  }
+  h1 { font-size: clamp(40px, 7vw, 80px); font-weight: 900; letter-spacing: -0.03em; line-height: 0.9; margin-bottom: 40px; }
+  .legal-text h2 { font-size: 20px; font-weight: 700; margin: 40px 0 15px 0; font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 1px; }
+  .legal-text p { font-size: 17px; color: var(--dim); line-height: 1.7; margin-bottom: 20px; }
+  
+  /* FOOTER SYSTEM */
+  footer { 
+    padding: 60px clamp(20px, 6vw, 90px); 
+    border-top: 1px solid var(--line); 
+    color: var(--dim); 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    gap: 20px; 
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--void);
+  }
+  footer a { color: var(--dim); text-decoration: none; margin-right: 25px; }
+  footer a:hover { color: var(--ink); }
+  
+  .noise{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.015;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<div class="site-container">
+  
+  <nav class="main-nav">
+    <a href="index.html" class="mono" style="display:flex; align-items:center; gap:14px; text-decoration:none;">
+      <img src="favicon.png" alt="" style="width:24px; height:24px; object-fit:contain;">
+      <div class="nav-brand-text">
+        <span style="font-weight:600; line-height:1.2;">Apophasis Labs</span>
+        <span class="nav-brand-demo">- DEMO</span>
+      </div>
+    </a>
+    
+    <div class="nav-channels mono">
+      <div class="dropdown" id="menuDropdown">
+        <button class="dropbtn mono" id="dropdownBtn">Kanäle [+]</button>
+        <div class="dropdown-content">
+          <a href="decoherence.html">Kanal 01 // <br>Decoherence</a>
+          <a href="precipitation.html">Kanal 02 // <br> Precipitation</a>
+          <a href="nucleation.html">Kanal 03 // <br> Nucleation</a>
+          <a href="index.html">Kanal 04-∞ // <br>Not Collapsed</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="site-content">
+    <section class="legal-content">
+      <div class="mono" style="color: var(--dim); margin-bottom: 15px;">Systembedingungen & Ausschluss</div>
+      <h1>AGB</h1>
+      
+      <div class="legal-text">
+        <h2>§ 1 Gegenstand des Dienstes und experimenteller Charakter</h2>
+        <p>Diese Bedingungen regeln die rein simulative Nutzung der Plattform „Apophasis Labs – Demo“ sowie aller assoziierten Kanäle (Kanal 01 // Decoherence, Kanal 02 // Precipitation, Kanal 03 // Nucleation). Das gesamte System dient ausschließlich experimentellen, künstlerischen und wissenschaftlichen Forschungszwecken des Interface-Designs, der Strukturanalyse und der Code-Demonstration.</p>
+
+        <h2>§ 2 Absoluter Haftungsausschluss für automatisierte Code-Generierung</h2>
+        <p>Die bereitgestellten Lösungsansätze und Code-Behebungen (wie im Kanal 03 // Nucleation für 10.000+ Fehlercodes dargestellt) werden vollständig automatisiert generiert und rein „wie gesehen“ (as is) zur Verfügung gestellt. Der Betreiber übernimmt keinerlei Gewähr oder Haftung für die Richtigkeit, Funktionalität, Virenfreiheit oder Kompatibilität des vorgeschlagenen Codes mit echten Systemen. <strong>Jegliche Haftung für Schäden, die durch die Übernahme oder Implementierung der Code-Fragmente in produktive oder externe Umgebungen entstehen (z. B. Datenverlust, Serverabstürze, Sicherheitslücken, Betriebsunterbrechungen), ist absolut ausgeschlossen.</strong> Die Nutzung erfolgt auf vollkommen eigene Gefahr und Risiko des Anwenders.</p>
+
+        <h2>§ 3 Simulation von UI-Interaktionen &amp; "SPONSOR"-Mechanik</h2>
+        <p>Die auf den Kanälen ausdrücklich verfügbaren Prozesse – wie das Anfordern von Gesprächen bezüglich Automatisierungsdienstleistungen in <em>Decoherence</em>, das Anfordern einer Scraper-Schnittstelle in <em>Precipitation</em> sowie das Autorisieren von Injektionen zur automatisierten Netz-Platzierung von SEO-optimierten Webstrukturen bei exakten Target:Pain-Indikatoren in <em>Nucleation</em> – sind Teil einer geschlossenen Infrastruktur-Simulation. Auch interaktive, hardcodierte Folgeantworten des Systems (wie sie nach einer E-Mail-Übermittlung, zur simulierten Aktivierung einer KI oder via Eingabe des Befehls „SPONSOR“ getriggert werden) stellen lediglich fiktive Verhaltensmuster einer simulierten Umgebung dar. Durch die Nutzung dieser Interfaces, das Absenden von simulierten E-Mails an Adressen wie <code>decoherence@apophasislabs.com</code> oder die Interaktion mit den Schaltflächen entstehen zu keinem Zeitpunkt finanzielle Forderungen, Zahlungsverpflichtungen, Verträge oder Ansprüche auf echte, produktive KI-Systemfreischaltungen.</p>
+
+        <h2>§ 4 Keine vertragliche Bindung</h2>
+        <p>Aufgrund des unentgeltlichen Gefälligkeitscharakters und der ausdrücklichen Deklaration als Kunst- und Forschungsprojekt kommt zwischen dem Nutzer und dem Betreiber kein Beratungsvertrag, Dienstvertrag oder sonstiges rechtsverbindliches Verhältnis zustande.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="mono">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html" style="color: var(--ink);">AGB</a>
+    </div>
+    <span class="mono">© 2026 APOPHASIS LABS</span>
+  </footer>
+</div>
+
+<script>
+  const dropdown = document.getElementById('menuDropdown');
+  const dropdownBtn = document.getElementById('dropdownBtn');
+
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+  });
+
+  // Dynamischer Hysteresis Scroll-Header für ein flüssiges mobiles UI
+  (function() {
+    const mainNav = document.querySelector('nav.main-nav');
+    let lastScrollY = window.scrollY;
+    let accumulatedDelta = 0; 
+
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY;
+
+      if (currentScrollY <= 40) {
+        mainNav.classList.remove('nav-hidden');
+        accumulatedDelta = 0;
+      } else {
+        accumulatedDelta += deltaY;
+        if (accumulatedDelta > 35) {
+          mainNav.classList.add('nav-hidden');
+          if (dropdown) dropdown.classList.remove('show');
+          accumulatedDelta = 0;
+        } else if (accumulatedDelta < -25) {
+          mainNav.classList.remove('nav-hidden');
+          accumulatedDelta = 0;
+        }
+      }
+      accumulatedDelta = Math.max(-60, Math.min(60, accumulatedDelta));
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  })();
+</script>
+</body>
+</html>

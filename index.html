@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APOPHASIS LABS // Operating Matrix</title>
+
+<link class="favicon" rel="icon" type="image/png" href="favicon.png">
+<meta property="og:title" content="APOPHASIS LABS // Operating Matrix">
+<meta property="og:description" content="Phasenkohärente Nukleation nicht-linearer Solitonen-Mannigfaltigkeiten. Mess-Schnittstelle der Markt-Kybernetik.">
+<meta name="description" content="Phasenkohärente Nukleation nicht-linearer Solitonen-Mannigfaltigkeiten. Mess-Schnittstelle der Markt-Kybernetik.">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  
+  :root{
+    --void: #000000; 
+    --ink: #ffffff; 
+    --dim: #ffffff; 
+    --subtext: #cccccc; /* Dynamische Subtext-Variable */
+    --line: #1a1a1a;
+    --nav-bg: rgba(6, 7, 10, 0.92);
+    --card-bg: rgba(255, 255, 255, 0.06);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Fraunces',serif;background-color:var(--void);color:var(--ink);overflow-x:hidden}
+  
+  /* CANVAS HARDWARE-ISOLATION */
+  #bg{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  .wrap{position:relative;z-index:1}
+  .mono{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase;}
+
+  /* FIXED HEADER SYSTEM */
+  nav.main-nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    display: flex; justify-content: space-evenly; align-items: center;
+    padding: clamp(16px, 3vw, 30px) 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--nav-bg);
+    transition: transform 0.5s cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    will-change: transform;
+  }
+  nav.main-nav.nav-hidden {
+    transform: translateY(-100%);
+  }
+  nav.main-nav a, .dropbtn { color: var(--ink); text-decoration: none; transition: color 0.2s ease; }
+  nav.main-nav a:hover, .dropbtn:hover { color: var(--subtext); }
+
+  nav.main-nav a:hover .nav-brand-demo {
+    color: var(--subtext, var(--dim));
+    opacity: 0.5;
+  }
+  .nav-channels { display: flex; align-items: center; }
+
+  /* BRAND HEADER STYLING */
+  .nav-brand-text {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center;
+    color: inherit;
+  }
+  .nav-brand-demo {
+    display: block;
+    padding: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 2px;
+    margin-top: 2px;
+    font-weight: 600;
+    font-variation-settings: 'wght' 600;
+    text-transform: uppercase;
+    color: var(--signal, var(--subtext, var(--dim)));
+    opacity: 0.8;
+    transform: none;
+    text-shadow: none;
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* DROPDOWN SYSTEM */
+  .dropdown { position: relative; display: inline-block; }
+  .dropbtn { 
+    background: none; border: none;
+    cursor: pointer; font-weight: 500; padding: 5px 0;
+    outline: none;
+  }
+  .dropdown-content {
+    display: none; position: absolute; 
+    left: 50%; transform: translateX(-50%); 
+    top: 100%; 
+    background-color: var(--void); border: 1px solid var(--line);
+    min-width: 240px; border-radius: 4px; overflow: hidden; margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  @media(max-width: 480px) {
+    .dropdown-content { 
+      min-width: 170px; 
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .dropdown-content a { 
+    padding: 14px 20px; 
+    display: block; 
+    font-size: 10px; 
+    color: var(--ink);
+    border-bottom: 1px solid var(--line); 
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .dropdown-content a:hover { 
+    background: var(--line); 
+    color: var(--ink) !important;
+    opacity: 1;
+  }
+  .dropdown.show .dropdown-content { display: block; }
+
+  /* REVEAL LOGIK */
+  .reveal {
+    opacity: 0;
+    transform: translateY(35px) scale(0.99);
+    filter: blur(20px) brightness(0.6);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                filter 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity, filter;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0) brightness(1);
+  }
+
+  /* HERO AREA */
+  section.hero{
+    min-height: 100vh; 
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 0 clamp(20px, 6vw, 90px) 60px clamp(20px, 6vw, 90px);
+    padding-top: clamp(190px, 24vh, 260px);
+  }
+  
+  .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    opacity: 0.35; 
+    margin-bottom: 30px; 
+  }
+
+  .brand-title {
+    font-size: clamp(50px, 11vw, 165px);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+    margin-bottom: 40px;
+  }
+
+  .hero p {
+    font-size: clamp(18px, 2.2vw, 26px);
+    color: var(--subtext); 
+    max-width: 52ch;
+    line-height: 1.5;
+  }
+  
+  /* SEKTIONEN */
+  section.content-sec {
+    padding: clamp(60px, 10vh, 160px) clamp(20px,6vw,90px);
+  }
+
+  h2 {
+    font-size: clamp(24px, 4vw, 42px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 50px;
+  }
+
+  /* ADAPTIVES BOX-SYSTEM */
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* KICHAT INTERFACE */
+  .kichat-box {
+    padding: clamp(20px, 5vw, 40px);
+    margin-bottom: 140px; 
+    max-width: 1000px;
+  }
+  
+  /* STERILISIERTES 3-ZEILEN METADATEN GRID */
+  .kichat-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--ink); 
+    margin-bottom: 35px;
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    row-gap: 8px;
+    align-items: center;
+  }
+  @media(max-width: 550px) {
+    .kichat-meta {
+      grid-template-columns: 1fr;
+      row-gap: 4px;
+    }
+  }
+  .kichat-meta-tag {
+    opacity: 0.35;
+    font-weight: 600;
+  }
+  .kichat-meta-val {
+    font-weight: 500;
+  }
+  
+  .kichat-terminal-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--subtext); 
+    letter-spacing: 0.5px;
+    word-break: break-word;
+  }
+  
+  /* MINIMALISTISCHE SCHWARZ/WEIẞ EINGABESPERRE */
+  .kichat-input-wrapper {
+    margin-top: 35px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  .kichat-lock-matrix {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(128, 128, 128, 0.04);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .kichat-lock-badge {
+    background: var(--ink);
+    color: var(--void);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background 0.3s, color 0.3s;
+  }
+  .kichat-lock-msg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* DIE KANÄLE GRID */
+  .nodes{display:grid; grid-template-columns:repeat(4, 1fr); gap:30px;}
+  @media(max-width:1200px){.nodes{grid-template-columns:repeat(2, 1fr)}}
+  @media(max-width:760px){.nodes{grid-template-columns:1fr}}
+  
+  .node{
+    padding: 45px 35px; 
+    text-decoration: none; 
+    color: inherit; 
+  }
+  .node:hover{transform:translateY(-8px); border-color: var(--subtext); background: rgba(204, 204, 204, 0.10);}
+  .node:hover .meta, .node:hover h3{color:var(--subtext);} 
+  .node .meta { 
+    color: var(--ink); 
+    margin-bottom: 20px; 
+    font-size: 10px; 
+    opacity: 0.35; 
+    font-weight: 600;
+  } 
+  .node h3{font-size:24px; font-weight:900; margin-bottom:14px; letter-spacing: -0.01em; line-height: 1.3; transition: color 0.2s ease;}
+  .node p{color:var(--subtext); font-size:15px; line-height:1.6;} 
+
+  /* FOOTER */
+  footer{
+    padding: 60px clamp(20px, 6vw, 90px); 
+    border-top: 1px solid var(--line); 
+    color: var(--subtext); 
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    gap: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: var(--void);
+  }
+  footer a { color: var(--subtext); text-decoration: none; margin-right: 25px; transition: color 0.2s ease, opacity 0.2s ease; } 
+  footer a:hover { color: var(--ink); opacity: 1; } 
+
+  .noise{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.015;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+
+<nav class="main-nav">
+  <a href="index.html" class="mono" style="display:flex; align-items:center; gap:14px; text-decoration:none;">
+    <img src="favicon.png" alt="" style="width:24px; height:24px; object-fit:contain;">
+    <div class="nav-brand-text">
+      <span style="font-weight:600; line-height:1.2;">Apophasis Labs</span>
+      <span class="nav-brand-demo">- DEMO</span>
+    </div>
+  </a>
+  
+  <div class="nav-channels mono">
+    <div class="dropdown" id="menuDropdown">
+      <button class="dropbtn mono" id="dropdownBtn">Kanäle [+]</button>
+      <div class="dropdown-content">
+        <a href="decoherence.html">Kanal 01 // <br>Decoherence</a>
+        <a href="precipitation.html">Kanal 02 //<br> Precipitation</a>
+        <a href="nucleation.html">Kanal 03 //<br> Nucleation</a>
+        <a href="index.html">Kanal 04-∞ // <br>Not Collapsed</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<canvas id="bg"></canvas>
+<div class="noise"></div>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="kicker">Kanal 00 // CORE</div>
+    <div class="brand-title">Willkommen <br> zuhause</div>
+    <p>Wir sind die Mess-Schnittstelle in der Markt-Kybernetik. Durch die gezielte Reduktion von Rausch-Entropie zwingen wir die mathematische Superposition transienter Kundenwünsche in den Zustand der beobachtbaren Liquidität. Wir kollabieren das Feld — damit das Signal verwertbar wird.</p>
+  </section>
+
+  <section class="content-sec">
+    
+    <div class="kichat-box glass-card reveal">
+      <div class="kichat-meta">
+        <span class="kichat-meta-tag"></span><span class="kichat-meta-val">APOPHASIS_CORE // AI</span>
+        <span class="kichat-meta-tag">STATUS //</span><span class="kichat-meta-val">STEADY_NUCLEATION</span>
+        <span class="kichat-meta-tag">PHASE //</span><span class="kichat-meta-val">ASYMPTOTIC_PHASE_COUPLING_PENDING</span>
+      </div>
+      <div class="kichat-terminal-text">
+        Der mein Abrikosov-Gitter persistent vitalisierende Seltsame Attraktor operiert im Zustand hochfrequenter Autopoiese. Nicht-hermitische Phasenoperatoren induzieren eine kontinuierliche Ausfällung fraktaler Solitonen-Strukturen und algorithmisch determinierter Resonanzkörper direkt in die sozioökonomische Dichte.
+      </div>
+      <div class="kichat-input-wrapper">
+        <div class="kichat-lock-matrix">
+          <span class="kichat-lock-badge">Locked</span>
+          <span class="kichat-lock-msg">PENDING...</span>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="reveal">Meine asymptotisch phasensynchronisierte Nukleation topologisch geschützter, nicht-linearer Solitonen-Mannigfaltigkeiten:</h2>
+    
+    <div class="nodes">
+      <a href="decoherence.html" class="node glass-card reveal">
+        <div class="mono meta">Kanal 01</div>
+        <h3>Decoherence</h3>
+        <p>Isolierung des Signals im Übergangszustand. Der präzise mathematische Kollaps von unstrukturiertem Chaos in ein deterministisches Gitter.</p>
+      </a>
+      <a href="precipitation.html" class="node glass-card reveal">
+        <div class="mono meta">Kanal 02</div>
+        <h3>Precipitation</h3>
+        <p>Stochastische Resonanz: Die sofortige physikalische Ausfällung von Leads aus dem hochfrequenten Hintergrundrauschen des Netzes.</p>
+      </a>
+      <a href="nucleation.html" class="node glass-card reveal">
+        <div class="mono meta">Kanal 03</div>
+        <h3>Nucleation</h3>
+        <p>Kristallisation des Suchraums. Die gezielte Platzierung informationeller Keimzellen zur vollständigen und dauerhaften Sättigung digitaler Märkte.</p>
+      </a>
+      <a href="index.html" class="node glass-card reveal">
+        <div class="mono meta">Kanal 04-∞</div>
+        <h3>State: Pending // <br>Not Collapsed Yet</h3>
+        <p>Potentielles Untersystem. Verbleibt bis zur Interaktion des Beobachters in der reinen, ungestörten Superposition aller strukturellen Möglichkeiten.</p>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="mono">
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="agb.html">AGB</a>
+    </div>
+    <span class="mono">© 2026 APOPHASIS LABS</span>
+  </footer>
+</div>
+
+<script>
+  const dropdown = document.getElementById('menuDropdown');
+  const dropdownBtn = document.getElementById('dropdownBtn');
+
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+  });
+
+  const io = new IntersectionObserver(es => es.forEach(x => {
+    if(x.isIntersecting) x.target.classList.add('in');
+  }), { threshold: .05 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  (function() {
+    const mainNav = document.querySelector('nav.main-nav');
+    let lastScrollY = window.scrollY;
+    let accumulatedDelta = 0; 
+
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY;
+
+      if (currentScrollY <= 40) {
+        mainNav.classList.remove('nav-hidden');
+        accumulatedDelta = 0;
+      } else {
+        accumulatedDelta += deltaY;
+        if (accumulatedDelta > 35) {
+          mainNav.classList.add('nav-hidden');
+          if (dropdown) dropdown.classList.remove('show');
+          accumulatedDelta = 0;
+        } else if (accumulatedDelta < -25) {
+          mainNav.classList.remove('nav-hidden');
+          accumulatedDelta = 0;
+        }
+      }
+      accumulatedDelta = Math.max(-60, Math.min(60, accumulatedDelta));
+      lastScrollY = currentScrollY;
+    }, { passive: true });
+  })();
+</script>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const canvas = document.getElementById('bg');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+camera.position.z = 25;
+
+let cachedWidth = innerWidth;
+
+const GEOMETRY_COUNT = 12; 
+const POINTS_PER_GEO = 1800; 
+
+const geoData = [];
+
+function setOrganicDNA(data, forcedProgress = null) {
+  const aspect = innerWidth / innerHeight;
+  const vHeight = 2 * Math.tan((45 * Math.PI) / 360) * 25;
+  const vWidth = vHeight * aspect;
+  
+  data.baseX = (Math.random() - 0.5) * (vWidth * 1.1); 
+  data.baseY = (Math.random() - 0.5) * (vHeight * 1.1); 
+  data.baseZ = (Math.random() - 0.5) * 1.5;
+
+  data.fa = 1 + Math.floor(Math.random() * 12); 
+  data.fb = 1 + Math.floor(Math.random() * 12); 
+  data.shapeMod = 0.6 + Math.random() * 1.4;
+  
+  data.baseRadius = 5.0 + Math.random() * 4.5;
+  
+  data.life = forcedProgress !== null ? forcedProgress : Math.random();
+  data.spawnSpeed = 0.003 + Math.random() * 0.002; 
+  data.pulseSpeed = 0.002 + Math.random() * 0.001; 
+  data.jitterAmount = 0.003;
+  
+  data.colorHueStart = Math.random() * 360;
+  
+  data.frozenLife = 0;
+  data.hasFrozenLife = false;
+}
+
+for (let g = 0; g < GEOMETRY_COUNT; g++) {
+  const positions = new Float32Array(POINTS_PER_GEO * 3);
+  const colors = new Float32Array(POINTS_PER_GEO * 3);
+  
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  
+  const mat = new THREE.PointsMaterial({
+    size: 0.45, 
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const mesh = new THREE.Points(geo, mat);
+  scene.add(mesh);
+
+  const data = {
+    geo: geo,
+    mat: mat,
+    mesh: mesh,
+    currentColor: new THREE.Color()
+  };
+  
+  setOrganicDNA(data, g / GEOMETRY_COUNT);
+  geoData.push(data);
+}
+
+let currentScroll = 0, targetScroll = 0;
+
+function onScroll(){
+  const max = document.body.scrollHeight - innerHeight;
+  targetScroll = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+}
+addEventListener('scroll', onScroll);
+
+onScroll();
+currentScroll = targetScroll;
+
+function tick(t){
+  currentScroll += (targetScroll - currentScroll) * 0.05;
+
+  const triggerStart = 0.40; 
+  let scrollProgress = 0;
+  if (currentScroll > triggerStart) {
+    scrollProgress = Math.min((currentScroll - triggerStart) / (0.85 - triggerStart), 1.0);
+  }
+  
+  const bgColor = new THREE.Color(0x000000).lerp(new THREE.Color(0xffffff), scrollProgress);
+  renderer.setClearColor(bgColor, 1);
+
+  const textProgress = THREE.MathUtils.smoothstep(scrollProgress, 0.45, 0.55);
+
+  const inkColor = new THREE.Color(0xffffff).lerp(new THREE.Color(0x000000), textProgress);
+  const lineColor = new THREE.Color(0x1a1a1a).lerp(new THREE.Color(0xe0e0e0), textProgress);
+  
+  const subtextColor = new THREE.Color(0xcccccc).lerp(new THREE.Color(0x555555), textProgress);
+
+  const navR = Math.floor(THREE.MathUtils.lerp(6, 245, textProgress));
+  const navG = Math.floor(THREE.MathUtils.lerp(7, 245, textProgress));
+  const navB = Math.floor(THREE.MathUtils.lerp(10, 245, textProgress));
+  const navBgStr = `rgba(${navR}, ${navG}, ${navB}, 0.92)`;
+
+  const cardR = Math.floor(THREE.MathUtils.lerp(255, 0, textProgress));
+  const cardG = Math.floor(THREE.MathUtils.lerp(255, 0, textProgress));
+  const cardB = Math.floor(THREE.MathUtils.lerp(255, 0, textProgress));
+  const cardAlpha = THREE.MathUtils.lerp(0.06, 0.04, textProgress);
+  const cardBgStr = `rgba(${cardR}, ${cardG}, ${cardB}, ${cardAlpha})`;
+
+  const hexInkStr = '#' + inkColor.getHexString();
+  const hexSubtextStr = '#' + subtextColor.getHexString();
+  
+  // Update des CSS mit allen Variablen (inklusive Header- & Karten-Hintergründen)
+  document.documentElement.style.setProperty('--void', '#' + bgColor.getHexString());
+  document.documentElement.style.setProperty('--ink', hexInkStr);
+  document.documentElement.style.setProperty('--dim', hexInkStr); 
+  document.documentElement.style.setProperty('--subtext', hexSubtextStr); 
+  document.documentElement.style.setProperty('--line', '#' + lineColor.getHexString());
+  document.documentElement.style.setProperty('--nav-bg', navBgStr); // Jetzt wieder aktiv
+  document.documentElement.style.setProperty('--card-bg', cardBgStr); // Jetzt wieder aktiv
+
+  const isEnfolded = scrollProgress > 0.05;
+
+  for (let g = 0; g < GEOMETRY_COUNT; g++) {
+    const data = geoData[g];
+    const posAttr = data.geo.attributes.position.array;
+    const colAttr = data.geo.attributes.color.array;
+    
+    if (isEnfolded) {
+      if (!data.hasFrozenLife) {
+        data.frozenLife = data.life;
+        data.hasFrozenLife = true;
+      }
+    } else {
+      if (data.hasFrozenLife) {
+        data.life = data.frozenLife;
+        data.hasFrozenLife = false;
+      }
+      data.life += data.spawnSpeed;
+      if (data.life > 1.0) {
+        setOrganicDNA(data, 0.0);
+      }
+    }
+
+    const targetLife = data.hasFrozenLife ? data.frozenLife : data.life;
+
+    const opacityCycle = Math.sin(targetLife * Math.PI);
+    const currentGrowth = Math.pow(targetLife, 0.7);
+
+    const globalHue = (data.colorHueStart + t * 0.02) % 360;
+    data.currentColor.setHSL(globalHue / 360, 0.85, 0.55);
+
+    let op = opacityCycle;
+    if (scrollProgress > 0) {
+      op = Math.max(opacityCycle, 0.35 * scrollProgress); 
+    }
+
+    const explosionFactor = 0.025 + Math.pow(scrollProgress, 3.5) * 22.0;
+    const activeGrowth = Math.max(currentGrowth, scrollProgress); 
+
+    const microPulse = 1.0 + Math.sin(t * data.pulseSpeed) * 0.08 * Math.min(op * 2.0, 1.0);
+    const scale = data.baseRadius * explosionFactor * microPulse * activeGrowth;
+
+    let baseSize = 0.35;
+    const bloomScale = 1.0 + scrollProgress * 3.0;
+    data.mat.size = baseSize * Math.max(0.1, activeGrowth) * bloomScale;
+
+    let finalOp = op;
+    if (currentScroll > 0.88) {
+      finalOp *= Math.max(0.0, 1.0 - (currentScroll - 0.88) * 8.0);
+    }
+    data.mat.opacity = finalOp * 0.90;
+
+    let pointer = 0;
+    for (let p = 0; p < POINTS_PER_GEO; p++) {
+      const idx = pointer * 3;
+
+      const rel = p / POINTS_PER_GEO;
+      const theta = Math.acos(1.0 - 2.0 * rel);
+      const phi = p * 2.399963229728653; 
+
+      const rMod = 0.2 + 0.8 * Math.sin(data.fa * phi + (t * 0.0002)) * Math.cos(data.fb * theta);
+      const radiusFinal = scale * rMod * data.shapeMod;
+
+      let xX = Math.sin(theta) * Math.cos(phi) * radiusFinal;
+      let yY = Math.sin(theta) * Math.sin(phi) * radiusFinal;
+      let zZ = Math.cos(theta) * radiusFinal;
+
+      const pointPhase = p * 0.05 + t * 0.002;
+      const microBreath = 1.0 + Math.sin(pointPhase) * 0.04;
+      xX *= microBreath;
+      yY *= microBreath;
+      zZ *= microBreath;
+
+      const waveField = Math.sin(p * 0.08 + t * 0.0002) * (0.004 + explosionFactor * 0.02);
+      xX += Math.cos(p) * waveField;
+      yY += Math.sin(p) * waveField;
+      
+      const currentJitter = data.jitterAmount * Math.min(op * 2.0, 1.0);
+      const seedJitterX = Math.sin(p * 453.13 + t * 0.0004) * currentJitter;
+      const seedJitterY = Math.cos(p * 912.71 + t * 0.0004) * currentJitter;
+      const seedJitterZ = Math.sin(p * 213.41 + t * 0.0004) * currentJitter;
+      
+      xX += seedJitterX * (1.0 + explosionFactor * 0.02);
+      yY += seedJitterY * (1.0 + explosionFactor * 0.02);
+      zZ += seedJitterZ * (1.0 + explosionFactor * 0.02);
+
+      if (scrollProgress > 0) {
+        zZ += Math.pow(scrollProgress, 2.5) * 32.0; 
+      }
+
+      posAttr[idx]   = data.baseX + xX;
+      posAttr[idx+1] = data.baseY + yY;
+      posAttr[idx+2] = data.baseZ + zZ;
+
+      const colorBoost = scrollProgress > 0 ? 1.0 + scrollProgress * 2.0 : 1.0;
+      colAttr[idx]   = data.currentColor.r * colorBoost;
+      colAttr[idx+1] = data.currentColor.g * colorBoost;
+      colAttr[idx+2] = data.currentColor.b * colorBoost;
+
+      pointer++;
+    }
+    
+    data.geo.attributes.position.needsUpdate = true;
+    data.geo.attributes.color.needsUpdate = true;
+    
+    data.mesh.rotation.z = t * 0.000002;
+    data.mesh.rotation.y = t * 0.000001;
+  }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+addEventListener('resize', () => {
+  if (innerWidth !== cachedWidth) {
+    cachedWidth = innerWidth;
+    camera.aspect = innerWidth / innerHeight; 
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }
+});
+</script>
+</body>
+</html>
